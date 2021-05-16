@@ -1,0 +1,447 @@
+;	(Octa)MED module load routines, by Teijo Kinnunen
+;	MED V3.00 module support added		22-Jan-1991
+;	upgraded for V3.20 (OctaMED V2.00)	02-Aug-1991
+;	and for OctaMED Pro V3.00		02-Apr-1992
+;	(bug fix)				31-May-1992
+;	OctaMED Pro V5 support (MMD2)		18-May-1993
+;	OctaMED Pro V6 support (cmd pages)	16-Jan-1995
+;	2 bug fixes (Thanks to Peter Kunath.)	14-Feb-1995
+;	V7 support				20-Sep-1995
+;	FastMem loading				26-Nov-1995
+;	MMD3 recognition			04-Dec-1995
+;	RequiredPlayRoutine			09-Jan-1996
+;	Didn't reloc MMD3s correctly...		17-Jan-1996
+;	FastMemPlayRecommended			29-Jan-1996
+;	Fixed MMD0 multi-module reloc error	25-Apr-1996
+
+;	$VER: loadmod_a 7.0 (25.4.1996)
+
+;	Function: d0 = _LoadModule(a0)
+;	a0 = module name
+;	d0 = pointer to loaded module, zero if load failed
+
+	XDEF	_LoadModule,_LoadModule_Fast
+	XDEF	_UnLoadModule
+	XDEF	_RelocModule
+	XDEF	_RequiredPlayRoutine
+	XDEF	_FastMemPlayRecommended
+
+mmd_songinfo	EQU	8
+mmd_blockarr	EQU	16
+mmd_expdata	EQU	32
+mmd_songsleft	EQU	51
+msng_numblocks	EQU	504
+msng_pseqs	EQU	508
+msng_flags	EQU	767
+msng_flags2	EQU	768
+msng_numsamples	EQU	787
+
+		CODE
+
+_LoadModule	move.l	d7,-(sp)
+		moveq	#0,d7
+		bsr.s	LoadMod
+		move.l	(sp)+,d7
+		rts
+
+_LoadModule_Fast
+		move.l	d7,-(sp)
+		moveq	#1,d7
+		bsr.s	LoadMod
+		move.l	(sp)+,d7
+		rts
+
+;if D7 = 1, load to Fast Mem always
+LoadMod:	movem.l a2-a4/a6/d2-d6,-(sp)
+		suba.l	a2,a2
+		moveq	#0,d6	;d6 = return value (zero = error)
+		move.l  a0,a4	;a4 = module name
+		movea.l 4.w,a6
+		lea     dosname(pc),a1
+		moveq	#0,d0
+		jsr     -$228(a6)	;OpenLibrary()
+		tst.l   d0
+		beq     xlm1
+		move.l  d0,a3	;a3 = DOSBase
+		move.l  d0,a6
+		move.l  a4,d1	;name = d1
+		move.l  #1005,d2	;accessmode = MODE_OLDFILE
+		jsr     -$1e(a6)	;Open()
+		move.l  d0,d4	;d4 = file handle
+		beq     xlm2
+		move.l  d4,d1
+		moveq   #0,d2
+		moveq   #1,d3	;OFFSET_END
+		jsr     -$42(a6)	;Seek(fh,0,OFFSET_END)
+		tst.l	d0
+		bmi.w	xlm3	;-1 = error
+		move.l  d4,d1
+		moveq	#-1,d3	;OFFSET_BEGINNING
+		jsr     -$42(a6)	;Seek(fh,0,OFFSET_BEGINNING)
+		move.l  d0,d5	;d5 = file size
+		bmi.w	xlm3
+		moveq	#1,d1	;alloc mem for beginning
+		moveq	#6*4,d0
+		movea.l	4.w,a6
+		jsr	-$c6(a6)	;AllocMem
+		tst.l	d0
+		beq.w	xlm3
+		move.l	d0,a2
+		move.l	d4,d1
+		move.l	a2,d2
+		moveq	#6*4,d3	;read beginning of the mod..
+		move.l	a3,a6
+		jsr	-$2a(a6)	;Read...
+		cmp.l	d3,d0
+		bne.w	xlm3		;error
+		cmp.l	#'MMD3',(a2)	;Soundstudio module using mixing?
+		beq.s	id_ok
+		cmp.l	#'MMD2',(a2)	;Pro V5 module?
+		beq.s	id_ok
+		cmp.l	#'MMD1',(a2)	;Pro module?
+		beq.s	id_ok
+		cmp.l   #'MMD0',(a2)
+		bne.s   xlm3		;this is not a module!!!
+id_ok		btst	#0,20(a2)	;test mmdflags of the module
+		beq.s	1$
+		moveq	#1,d7		;Fast Mem
+1$		movea.l	4.w,a6		;free the 24-byte buffer
+		moveq	#6*4,d0
+		move.l	a2,a1
+		jsr	-$d2(a6)		;FreeMem()
+		suba.l	a2,a2
+		move.l  d4,d1
+		moveq	#0,d2
+		moveq	#-1,d3		;OFFSET_BEGINNING
+		move.l	a3,a6
+		jsr     -$42(a6)		;Seek(fh,0,OFFSET_BEGINNING)
+		tst.l	d0
+		bmi.s	xlm3		;seek error
+		movea.l 4.w,a6
+		move.l	d5,d0
+		moveq   #1,d1		;mem type: PUBLIC
+		tst.b	d7		;force Fast Mem
+		bne.s	2$
+		moveq	#3,d1		;mem type: PUBLIC|CHIP
+2$		jsr     -$c6(a6)		;AllocMem()
+		tst.l   d0
+		beq.s   xlm3
+		move.l  d0,a4		;a4 = pointer to module
+		move.l  d4,d1		;file
+		move.l  d0,d2		;buffer
+		move.l  d5,d3		;length
+		move.l  a3,a6
+		jsr     -$2a(a6)		;Read()
+		cmp.l   d5,d0
+		bne.s   xlm4		;something wrong...
+		movea.l a4,a0
+		bsr.w   _RelocModule
+		move.l  a4,d6		;no error...
+		bra.s   xlm3
+xlm4		move.l  a2,a1		;error: free the memory
+		move.l  d5,d0
+		movea.l 4.w,a6
+		jsr     -$d2(a6)		;FreeMem()
+xlm3		move.l	a2,d0		;24-byte buffer exists?
+		beq.s	1$
+		movea.l	4.w,a6
+		moveq	#6*4,d0
+		move.l	a2,a1
+		jsr	-$d2(a6)		;FreeMem()
+1$		move.l  a3,a6		;close the file
+		move.l  d4,d1
+		jsr     -$24(a6)		;Close(fhandle)
+xlm2		move.l  a3,a1		;close dos.library
+		movea.l 4,a6
+		jsr     -$19e(a6)
+xlm1		move.l  d6,d0		;push return value
+		movem.l (sp)+,a2-a4/a6/d2-d6	;restore registers
+		rts			;and exit...
+dosname		dc.b	'dos.library',0
+
+;	Function: _RelocModule(a0)
+;	a0 = pointer to module
+
+; This function is a bit strangely arranged around the small reloc-routine.
+reloci		move.l	24(a2),d0
+		beq.s	xloci
+		movea.l	d0,a0
+		moveq   #0,d0
+		move.b  msng_numsamples(a1),d0	;number of samples
+		subq.b  #1,d0
+relocs		bsr.s   relocentr
+		move.l	-4(a0),d3	;sample ptr
+		beq.s	nosyn
+		move.l	d3,a3
+		tst.w	4(a3)
+		bpl.s	nosyn		;type >= 0
+		move.w	20(a3),d2	;number of waveforms
+		lea	278(a3),a3	;ptr to wf ptrs
+		subq.w	#1,d2
+relsyn		add.l	d3,(a3)+
+		dbf	d2,relsyn
+nosyn		dbf     d0,relocs
+xloci		rts
+norel		addq.l	#4,a0
+		rts
+relocentr	tst.l   (a0)
+		beq.s   norel
+		add.l   d1,(a0)+
+		rts
+_RelocModule:
+		movem.l	a2-a4/d2-d4,-(sp)
+		movea.l a0,a2
+		move.l  a2,d1		;d1 = ptr to start of module
+		bsr.s	relocp
+		movea.l mmd_songinfo(a2),a1
+		bsr.s	reloci
+		move.b	mmd_songsleft(a2),d4
+rel_lp		bsr.s	relocb
+		cmp.b	#'T',3(a2)
+		beq.s	norelmmd2
+		cmp.b	#'2',3(a2)	;MMD2?
+		bcs.s	norelmmd2
+		bsr.w	relocmmd2sng
+norelmmd2	move.l	mmd_expdata(a2),d0	;extension struct
+		beq.s	rel_ex
+		move.l	d0,a0
+		bsr.s	relocentr		;ptr to next module
+		bsr.s	relocentr		;InstrExt...
+		addq.l	#4,a0		;skip sizes of InstrExt
+; We reloc the pointers of MMD0exp, so anybody who needs them can easily
+; read them.
+		bsr.s	relocentr		;annotxt
+		addq.l	#4,a0		;annolen
+		bsr.s	relocentr		;InstrInfo
+		addq.l	#8,a0
+		bsr.s	relocentr		;rgbtable (not useful for most people)
+		addq.l	#4,a0		;skip channelsplit
+		bsr.s	relocentr		;NotationInfo
+		bsr.s	relocentr		;songname
+		addq.l	#4,a0		;skip song name length
+		bsr.s	relocentr		;MIDI dumps
+		bsr.s	relocmdd
+		bsr.s	relocentr		;mmdinfo
+		bsr.s	relocentr		;mmdrexx
+		bsr.w	relocrx
+		bsr.s	relocentr		;mmdcmd3x
+		bsr.w	reloccmd3x
+		subq.b	#1,d4		;songs left..?
+		bcs.s	rel_ex
+		move.l	d0,a0
+		move.l	(a0),d0
+		beq.s	rel_ex
+		move.l	d0,a2
+		bsr.s	relocp
+		movea.l 8(a2),a1
+		bra.s	rel_lp
+rel_ex		movem.l	(sp)+,d2-d4/a2-a4
+		rts
+
+relocp		lea	mmd_songinfo(a2),a0
+		bsr.w	relocentr
+		addq.l	#4,a0
+		bsr.w	relocentr
+		addq.l	#4,a0
+		bsr.w	relocentr
+		addq.l	#4,a0
+		bra.w	relocentr
+
+relocb		move.l	mmd_blockarr(a2),d0
+		beq.s	xlocb
+		movea.l	d0,a0
+		move.w  msng_numblocks(a1),d0
+		subq.b  #1,d0
+rebl		bsr	relocentr
+		dbf     d0,rebl
+		cmp.b	#'T',3(a2)	;MMD0 (= MCNT)
+		beq.s	xlocb
+		cmp.b	#'1',3(a2)	;test MMD type
+		bge.w	relocbi
+xlocb		rts
+
+relocmdd	movem.l	d0/a0,-(sp)
+		tst.l	-(a0)
+		beq.s	xlocmdd
+		movea.l	(a0),a0
+		move.w	(a0),d0		;# of msg dumps
+		addq.l	#8,a0
+1$		beq.s	xlocmdd
+		bsr	relocentr
+		bsr.s	relocdmp
+		subq.w	#1,d0
+		bra.s	1$
+xlocmdd		movem.l	(sp)+,d0/a0
+		rts
+
+relocrxtrig	movem.l	d0/a0,-(sp)
+		subq.l	#4,a0
+2$		move.l	(a0),d0
+		beq.s	1$
+		move.l	d0,a0
+		addq.l	#8,a0
+		bsr	relocentr		;command name
+		bsr	relocentr		;port name
+		move.l	d0,a0
+		bra.s	2$
+1$		movem.l	(sp)+,d0/a0
+		rts
+
+relocrx		movem.l	d0/a0,-(sp)
+		move.l	-(a0),d0
+		beq.s	1$
+		move.l	d0,a0
+		addq.l	#4,a0		;skip res, trigcmdlen
+		bsr	relocentr
+		bsr.s	relocrxtrig
+1$		movem.l	(sp)+,d0/a0
+		rts
+
+reloccmd3x	movem.l	d0/a0,-(sp)
+		move.l	-(a0),d0
+		beq.s	1$
+		move.l	d0,a0
+		addq.l	#4,a0		;skip struct_vers, pad, num_of_settings
+		bsr	relocentr		;ctrlr_types
+		bsr	relocentr		;ctrlr_numbers
+1$		movem.l	(sp)+,d0/a0
+		rts
+
+relocdmp	move.l	-4(a0),d3
+		beq.s	xlocdmp
+		exg.l	a0,d3		;save
+		addq.l	#4,a0
+		bsr	relocentr		;reloc data pointer
+		move.l	d3,a0		;restore
+xlocdmp		rts
+
+relocbi		move.w	msng_numblocks(a1),d0
+		move.l	a0,a3
+biloop		subq.w	#1,d0
+		bmi.s	xlocdmp
+		move.l	-(a3),a0
+		addq.l	#4,a0
+		bsr	relocentr		;BlockInfo ptr
+		tst.l	-(a0)
+		beq.s	biloop
+		move.l	(a0),a0
+		bsr	relocentr		;hldata
+		bsr	relocentr		;block name
+		addq.l	#4,a0		;skip blocknamelen
+		bsr	relocentr		;pagetable
+		tst.l	-(a0)
+		bne.s	relocpgtbl
+		bra.s	biloop
+; take care of the new features of MMD2s
+relocmmd2sng	move.l	mmd_songinfo(a2),a0
+		lea	msng_pseqs(a0),a0
+		bsr	relocentr		;playseqtable
+		bsr	relocentr		;sectiontable
+		bsr	relocentr		;trackvols
+		addq.l	#4,a0
+		bsr	relocentr		;trackpans
+		move.w	-6(a0),d0	;numpseqs
+		move.l	-20(a0),a0	;get back to playseqtable
+		subq.w	#1,d0
+psqtblloop	bsr	relocentr
+		dbf	d0,psqtblloop
+		rts
+relocpgtbl	movea.l	(a0),a4			;page table list hdr
+		move.w	(a4),d2
+		subq.w	#1,d2
+		lea	4(a4),a0
+pgtblloop	bsr	relocentr
+		dbf	d2,pgtblloop
+		bra	biloop
+
+
+;	Function: _UnLoadModule(a0)
+;	a0 = pointer to module
+_UnLoadModule:
+		move.l  a6,-(sp)
+		move.l  a0,d0
+		beq.s   xunl
+		movea.l 4,a6
+		move.l  4(a0),d0
+		beq.s   xunl
+		movea.l a0,a1
+		jsr     -$d2(a6)		;FreeMem()
+xunl		move.l	(sp)+,a6
+		rts
+
+;	Function: _RequiredPlayRoutine(a0)
+;	a0 = pointer to module
+;	Returns:
+;		0 = 4 channel routine (or no module)
+;		1 = 5-8 channel routine
+;		2 = mixing routine
+
+_RequiredPlayRoutine:
+		move.l	a0,d0
+		beq.s	3$
+		move.l	8(a0),a0		;song struct
+		tst.b	msng_flags2(a0)	;mixing?
+		bmi.s	2$
+		btst	#6,msng_flags(a0) ;5-8 channel?
+		bne.s	1$
+3$		moveq	#0,d0
+		rts
+1$		moveq	#1,d0
+		rts
+2$		moveq	#2,d0
+		rts
+
+;	Function: _FastMemPlayRecommended(a0)
+;	a0 = pointer to module
+;	Returns:
+;		0 = plays perfectly without FastMemPlay
+;		1 = may not play perfectly without FastMemPlay
+
+_FastMemPlayRecommended:
+		movem.l	d2/a2,-(sp)
+		move.l	a0,d1
+		beq.s	fmpr_ret0
+		movea.l	mmd_songinfo(a0),a1
+		moveq	#0,d1
+		move.b	msng_numsamples(a1),d1
+		move.l	24(a0),d0	;sample array
+		beq.s	fmpr_nosamples
+		movea.l	d0,a1
+		move.l	d1,d0
+		subq.l	#1,d0
+1$		move.l	(a1)+,d2
+		beq.s	2$
+		movea.l	d2,a2		;instrument address
+		move.l	(a2),d2		;length
+		swap	d2		;upper word...
+		lsr.w	#1,d2
+		bne.s	fmpr_ret1		;length >= 131072
+2$		dbra	d0,1$
+fmpr_nosamples	move.l	mmd_expdata(a0),d0
+		beq.s	fmpr_ret0
+		movea.l	d0,a1
+		move.l	4(a1),d0		;exp_smp
+		beq.s	fmpr_ret0
+		move.w	8(a1),d1
+		beq.s	fmpr_ret0
+		move.w	10(a1),d2
+		cmp.w	#18,d2
+		blt.s	fmpr_ret0		;no long repeat
+		movea.l	d0,a1
+		subq.w	#1,d1
+1$		move.l	10(a1),d0
+		or.l	14(a1),d0
+		lsr.l	#1,d0
+		bcs.s	fmpr_ret1		;odd... return 1
+		swap	d0
+		tst.w	d0
+		bne.s	fmpr_ret1		;start/len >= 131072
+		adda.w	d2,a1
+		dbra	d1,1$
+fmpr_ret0	moveq	#0,d0
+fmpr_ret	movem.l	(sp)+,d2/a2
+		rts
+fmpr_ret1	moveq	#1,d0
+		bra.s	fmpr_ret
+
+		END
