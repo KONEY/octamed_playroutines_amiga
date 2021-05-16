@@ -365,7 +365,7 @@ _PlayNote:	;d7(w) = trk #, d1 = note #, d3(w) = instr # a3 = addr of instr
 		move.l	a3,d4
 		beq.s	SO_rts
 		IFNE	SAMPLES_TRACKING	; ## KONEY MOD ##
-		CLR.W	$100			; DEBUG | w 0 100 2
+		;CLR.W	$100			; DEBUG | w 0 100 2
 		LEA	MED_TRK_INFO_0,A4
 		MOVE.W	D3,(A4,D7.W)	; SAVE SMPL# IN RELATIVE TRACK
 		ENDC			; ## KONEY MOD ##
