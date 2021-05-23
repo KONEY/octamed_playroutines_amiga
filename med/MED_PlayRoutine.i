@@ -70,7 +70,7 @@ EASY		EQU	1
 ;============================================================================
 
 SAMPLES_TRACKING	EQU	0	; Tracks samples#, notes etc - By KONEY
-MED_START_POS	EQU	10	; After SEQ 0 jump to #
+MED_START_POS	EQU	20	; After SEQ 0 jump to #
 ;LOOP_AT_END	EQU	0	; Stop at end? needs CHECK EQU 1
 
 ; The MMD structure offsets
@@ -1131,6 +1131,8 @@ AdvSngPtr:	move.l	mmd_pblock(a2),fxplineblk-DB(a6) ;store pline/block for fx
 		bra.s	plr_linenumset
 plr_advlinenum:	move.w	mmd_pline(a2),d1		;get current line #
 		addq.w	#1,d1			;advance line number
+		MOVE.W	D1,MED_BLOCK_LINE		;INCREASE LINE POS | KONEY
+		ADDI.W	#1,MED_STEPSEQ_POS	;INCREASE STEPSEQ | KONEY
 plr_linenumset:	cmp.w	numlines-DB(a6),d1 	;advance block?
 		bhi.s	plr_chgblock		;yes.
 		tst.b	nextblock-DB(a6)		;command F00/1Dxx?
@@ -1139,6 +1141,8 @@ plr_linenumset:	cmp.w	numlines-DB(a6),d1 	;advance block?
 plr_chgblock:	tst.b	nxtnoclrln-DB(a6)
 		bne.s	plr_noclrln
 		moveq	#0,d1			;clear line number
+		MOVE.W	#0,MED_BLOCK_LINE		;RESET LINE POS | KONEY
+		MOVE.W	#0,MED_STEPSEQ_POS	;RESET STEPSEQ | KONEY
 plr_noclrln:	tst.w	mmd_pstate(a2)		;play block or play song
 		bpl.w	plr_nonewseq		;play block only...
 		cmp.b	#'2',3(a2)		;MMD2?
@@ -3252,7 +3256,9 @@ MED_TRK_INFO_1:	DC.L 0
 MED_TRK_INFO_2:	DC.L 0
 MED_TRK_INFO_3:	DC.L 0
 	ENDC
-MED_SONG_POS:	DC.W 0
+MED_SONG_POS:	DC.W 0	; Well the position...
+MED_BLOCK_LINE:	DC.W 0	; Line of block
+MED_STEPSEQ_POS:	DC.W 0	; Pos of the step sequencer 0-15
 
 ; Fields in struct InstrExt (easier to access this way rather than
 ; searching through the module).
