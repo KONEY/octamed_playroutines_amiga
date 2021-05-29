@@ -1,3 +1,4 @@
+;APS00000000000000000000000000000000000000000000000000000000000000000000000000000000
 ;============================================================================
 ;	proplayer.a
 ;	~~~~~~~~~~~
@@ -70,7 +71,7 @@ EASY		EQU	1
 ;============================================================================
 
 SAMPLES_TRACKING	EQU	0	; Tracks samples#, notes etc - By KONEY
-MED_START_POS	EQU	20	; After SEQ 0 jump to #
+MED_START_POS	EQU	37	; After SEQ 0 jump to #
 ;LOOP_AT_END	EQU	0	; Stop at end? needs CHECK EQU 1
 
 ; The MMD structure offsets
@@ -3230,11 +3231,16 @@ t463d:		ds.b	(MAX_NUMTRACKS-4)*T415SZ
 trackdataptrs:	dc.l	t03d,t03d+T03SZ,t03d+2*T03SZ,t03d+3*T03SZ
 ; Build pointer table. This works on Devpac assembler, other assemblers
 ; may need modifications.
-TRKCOUNT		SET	0
-		REPT	(MAX_NUMTRACKS-4)
-		dc.l	t463d+TRKCOUNT
-TRKCOUNT		SET	TRKCOUNT+T415SZ
-		ENDR
+;TRKCOUNT		SET	0
+;		REPT	(MAX_NUMTRACKS-4)
+;		dc.l	t463d+TRKCOUNT
+;TRKCOUNT		SET	TRKCOUNT+T415SZ
+;		ENDR
+; MODIFICATION FOR ASM-PRO
+	DC.L t463d+0
+	;DC.L t463d1
+	;DC.L t463d2
+	;DC.L t463d3
 
 nextblock:	dc.b	0 ;\ DON'T SEPARATE
 nxtnoclrln:	dc.b	0 ;/
