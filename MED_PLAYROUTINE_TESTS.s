@@ -1,4 +1,3 @@
-;APS00000000000000000000000000000000000000000000000000000000000000000000000000000000
 ;*** ATTEMPTS TO PLAY MED MUSIC
 ;*** MiniStartup by Photon ***
 	INCDIR	"NAS:AMIGA/CODE/octamed_playroutines_amiga/"
@@ -72,11 +71,11 @@ MainLoop:
 	MOVE.L	KONEYBG,DrawBuffer
 	; do stuff here :)
 
-
 	;MOVE.W	MED_SONG_POS,D0
 	MOVE.W	MED_STEPSEQ_POS,D0
 	ANDI.W	#15,D0
 	MOVE.W	D0,MED_STEPSEQ_POS
+	MOVE.W	MED_START_POS,D0
 	CLR.W	$100			; DEBUG | w 0 100 2
 
 	BSR.W	__CREATESCROLLSPACE	; NOW WE USE THE BLITTER HERE!
@@ -85,10 +84,25 @@ MainLoop:
 	BSR.W	__POPULATETXTBUFFER	; PUT SOMETHING
 
 	;*--- main loop end ---*
+	;BTST	#6,$BFE001
+	;BNE.S	.DontShowRasterTime
+	;MOVE.W	#$0F0,$180(A6)	; show rastertime left down to $12c
+	;.DontShowRasterTime:
+
+	; # CODE FOR BUTTON PRESS ##
 	BTST	#6,$BFE001
 	BNE.S	.DontShowRasterTime
-	MOVE.W	#$0F0,$180(A6)	; show rastertime left down to $12c
+	TST.W	LMBUTTON_STATUS
+	BNE.S	.DontShowRasterTime
+	MOVE.W	#1,LMBUTTON_STATUS
+	MOVE.W	#$F00,$DFF180	; show rastertime left down to $12c
+	ADD.W	#1,MED_START_POS
 	.DontShowRasterTime:
+	BTST	#6,$BFE001
+	BEQ.S	.DontResetStatus
+	MOVE.W	#0,LMBUTTON_STATUS
+	.DontResetStatus:
+
 	BTST	#2,$DFF016	; POTINP - RMB pressed?
 	BNE.W	MainLoop		; then loop
 	;*--- exit ---*
@@ -308,7 +322,7 @@ __POPULATETXTBUFFER:
 	RTS
 
 ;********** Fastmem Data **********
-
+LMBUTTON_STATUS:	DC.W 0
 AUDIOCHANLEVEL0:	DC.W 0
 AUDIOCHANLEVEL1:	DC.W 0
 AUDIOCHANLEVEL2:	DC.W 0
@@ -329,7 +343,6 @@ DISPLACETABLE:
 	DC.W 0,0,3,0,0,0,0,1,4,0,0,0,0,8,1
 	DC.W 2,1,0,1,0,3,0,3,0,0,0,1,2,1,0,0
 	DC.W 0,2,0,0,3,0,0,0,0,1,0,0,0,2,1,4
-
 
 PATCH:		DS.B 10*64*bpls	;I need a buffer to save trap BG
 
@@ -416,8 +429,8 @@ _Copper:
 	SECTION "ChipBuffers",BSS_C	;BSS doesn't count toward exe size
 ;*******************************************************************************
 
-SCREEN1:		DS.B h*bwid	; Define storage for buffer 1
-SCREEN2:		DS.B h*bwid	; two buffers
-GLITCHBUFFER:	DS.B h*bwid	; some free space for glitch
+SCREEN1:		DS.B 0	; Define storage for buffer 1
+SCREEN2:		DS.B 0	; two buffers
+GLITCHBUFFER:	DS.B 0	; some free space for glitch
 
 	END

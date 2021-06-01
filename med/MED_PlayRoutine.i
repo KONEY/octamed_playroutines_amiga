@@ -22,127 +22,11 @@
 ; should be directed to RBF Software. (Email: rbfsoft@cix.compulink.co.uk)
 ;
 ;============================================================================
-; REFACTOR, DEBUG, EXTENDED FEATURES BY KONEY 2021 - www.koney.org | github.com/KONEY
+; REFACTOR, DEBUG, EXTENDED FEATURES BY KONEY | koney.org | github.com/KONEY
+; KONEY Version 0.9 | 01.06.2021
 ;============================================================================
 
-;****** Feature control ******
-;
-MIDI		EQU	0	;1 = include MIDI code
-AUDDEV		EQU	0	;1 = allocate channels using audio.device
-SYNTH		EQU	0	;1 = include synth-sound handler
-CHECK		EQU	1	;1 = do range checkings (track, sample in mem etc.)
-RELVOL		EQU	1	;1 = include relative volume handling code
-IFFMOCT		EQU	0	;1 = play IFF multi-octave samples/ExtSamples correctly
-HOLD		EQU	0	;1 = handle hold/decay
-PLAYMMD0 	EQU	0	;1 = play old MMD0 modules
-AURA		EQU	0	;1 = support the Aura sampler
-;
-; The less features you include, the faster and shorter the play-routine
-; will be.
-;
-; NOTE: Using the Aura will cause Enforcer hits (LONG-READ/WRITE at addr $70).
-; This is normal, and can't be avoided.
-
-;****** Timing control ******
-;
-VBLANK		EQU	0	;1 = use VBlank interrupt (when absolutely necessary)
-CIAB		EQU	1	;1 = use CIA timers (default)
-;
-; Please use CIAB whenever possible to avoid problems with variable
-; VBlank speeds and to allow the use of command F01 - FF0 (set tempo)
-; If both are set to 0, the timing is left for you (never set both to 1!!),
-; then you just call _IntHandler for each timing pulse.
-
-;============================================================================
-
-;If you are making a demo/game with only a single tune you'd like to
-;incorporate in the code (like "easyplayer.a" of MED V3), set the following
-;flag to 1. This requires an assembler with INCBIN (or equivalent) directive.
-;You have to insert the module name to the INCBIN statement (located near the
-;end of this file, on line 2052).
-
-EASY		EQU	1
-
-;Call _startmusic to play the music, and _endmusic to stop it (before
-;exiting). Note: don't call _startmusic twice!! This would cause the module
-;to be relocated twice (= Guru). If you need to stop and continue playing,
-;don't use the EASY routines, use PlayModule/StopPlayer... instead.
-
-;============================================================================
-
-SAMPLES_TRACKING	EQU	0	; Tracks samples#, notes etc - By KONEY
-MED_START_POS	EQU	37	; After SEQ 0 jump to #
-;LOOP_AT_END	EQU	0	; Stop at end? needs CHECK EQU 1
-
-; The MMD structure offsets
-mmd_id		EQU	0
-mmd_modlen	EQU	4
-mmd_songinfo	EQU	8
-; these two for MMD2s only!
-mmd_psecnum	EQU	12
-mmd_pseq 	EQU	14
-;
-mmd_blockarr	EQU	16
-mmd_smplarr	EQU	24
-mmd_expdata	EQU	32
-mmd_pstate	EQU	40	; <0 = play song, 0 = don't play, >0 = play block
-mmd_pblock	EQU	42
-mmd_pline 	EQU	44
-mmd_pseqnum	EQU	46
-mmd_counter	EQU	50
-mmd_songsleft	EQU	51
-
-; The Song structure
-; Instrument data here (504 bytes = 63 * 8)
-msng_numblocks	EQU	504
-msng_songlen	EQU	506
-msng_playseq	EQU	508
-msng_deftempo	EQU	764
-msng_playtransp	EQU	766
-msng_flags	EQU	767
-msng_flags2	EQU	768
-msng_tempo2	EQU	769
-; msng_trkvol applies to MMD0/MMD1 only.
-msng_trkvol	EQU	770
-msng_mastervol	EQU	786
-msng_numsamples	EQU	787
-; Fields below apply to MMD2 modules only.
-msng_pseqs	EQU	508
-msng_sections	EQU	512
-msng_trkvoltbl	EQU	516
-msng_numtracks	EQU	520
-msng_numpseqs	EQU	522
-
-; Instrument data
-inst_repeat	EQU	0
-inst_replen	EQU	2
-inst_midich	EQU	4
-inst_midipreset	EQU	5
-inst_svol 	EQU	6
-inst_strans	EQU	7
-
-; Audio hardware offsets
-ac_ptr		EQU	$00
-ac_len		EQU	$04
-ac_per		EQU	$06
-ac_vol		EQU	$08
-
-; Trackdata sizes
-T03SZ		EQU	106
-T415SZ		EQU	22
-;offset of trk_audioaddr
-TAAOFFS		EQU	24
-TTMPVOLOFFS	EQU	102
-
-; Maximum number of tracks allowed. If you don't need this much tracks,
-; you can decrease the number to save some space. (Be sure that the
-; song really has no more than MAX_NUMTRACKS tracks. Minimum allowed
-; value = 4.)
-MAX_NUMTRACKS	EQU	4
-
-; This value is used for MMD0/1 conversion. If MAX_NUMTRACKS <= 16,
-; this should be the same. If MAX_NUMTRACKS > 16, this should be 16.
-MAX_MMD1_TRACKS	EQU	4
+ INCLUDE "med/med_feature_control.i"		; CFGs
 
 ; Aura output handling routines
 	IFNE	AURA
@@ -366,7 +250,6 @@ _PlayNote:	;d7(w) = trk #, d1 = note #, d3(w) = instr # a3 = addr of instr
 		move.l	a3,d4
 		beq.s	SO_rts
 		IFNE	SAMPLES_TRACKING	; ## KONEY MOD ##
-		;CLR.W	$100			; DEBUG | w 0 100 2
 		LEA	MED_TRK_INFO_0,A4
 		MOVE.W	D3,(A4,D7.W)	; SAVE SMPL# IN RELATIVE TRACK
 		ENDC			; ## KONEY MOD ##
@@ -1189,11 +1072,12 @@ plr_noadvseq_b:	cmp.w	msng_songlen(a4),d0	;is this the highest seq number??
 		blt.s	plr_notagain_b		;no.
 		moveq	#0,d0			;yes: restart song
 plr_notagain_b:	move.b	d0,mmd_pseqnum+1(a2)	;remember new playseq-#
-		IFNE	MED_START_POS
-		CMPI.W	#MED_START_POS,D0		;START_POS REACHED? | KONEY
+		;IFNE	START_POS
+		CMP.W	MED_START_POS,D0		;START_POS REACHED? | KONEY
 		BLO.S	plr_noMMD2_0		;GO INCREMENT AGAIN | KONEY
-		ENDC
+		;ENDC
 		MOVE.W	D0,MED_SONG_POS		;SAVE POSITION | KONEY
+		MOVE.W	D0,MED_START_POS		;SAVE POSITION | KONEY
 		lea	msng_playseq(a4),a0	;offset of sequence table
 		move.b	0(a0,d0.w),d0		;get number of the block
 ; ********* BELOW CODE FOR BOTH FORMATS *********************************
@@ -3231,16 +3115,14 @@ t463d:		ds.b	(MAX_NUMTRACKS-4)*T415SZ
 trackdataptrs:	dc.l	t03d,t03d+T03SZ,t03d+2*T03SZ,t03d+3*T03SZ
 ; Build pointer table. This works on Devpac assembler, other assemblers
 ; may need modifications.
-;TRKCOUNT		SET	0
-;		REPT	(MAX_NUMTRACKS-4)
-;		dc.l	t463d+TRKCOUNT
-;TRKCOUNT		SET	TRKCOUNT+T415SZ
-;		ENDR
+TRKCOUNT		SET	0
+		REPT	(MAX_NUMTRACKS-4)
+		dc.l	t463d+TRKCOUNT
+TRKCOUNT		SET	TRKCOUNT+T415SZ
+		ENDR
 ; MODIFICATION FOR ASM-PRO
-	DC.L t463d+0
-	;DC.L t463d1
-	;DC.L t463d2
-	;DC.L t463d3
+;	DC.L t463d+0
+
 
 nextblock:	dc.b	0 ;\ DON'T SEPARATE
 nxtnoclrln:	dc.b	0 ;/
@@ -3265,6 +3147,7 @@ MED_TRK_INFO_3:	DC.L 0
 MED_SONG_POS:	DC.W 0	; Well the position...
 MED_BLOCK_LINE:	DC.W 0	; Line of block
 MED_STEPSEQ_POS:	DC.W 0	; Pos of the step sequencer 0-15
+MED_START_POS:	DC.W START_POS
 
 ; Fields in struct InstrExt (easier to access this way rather than
 ; searching through the module).
@@ -3279,8 +3162,8 @@ playing_aura:	ds.b 1
 
 ; Below are the period tables. There's one table for each finetune position.
 	IFNE	SYNTH|IFFMOCT
-	dc.w 3424,3232,3048,2880,2712,2560,2416,2280,2152,2032,1920,1812
-	dc.w 1712,1616,1524,1440,1356,1280,1208,1140,1076,1016,960,906
+	dc.w	3424,3232,3048,2880,2712,2560,2416,2280,2152,2032,1920,1812
+	dc.w	1712,1616,1524,1440,1356,1280,1208,1140,1076,1016,960,906
 	ENDC
 per0:	dc.w	856,808,762,720,678,640,604,570,538,508,480,453
 	dc.w	428,404,381,360,339,320,302,285,269,254,240,226
