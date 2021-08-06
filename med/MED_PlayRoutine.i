@@ -25,7 +25,7 @@
 ; KONEY Version 0.9 | 01.06.2021
 ;============================================================================
 
- INCLUDE "med/med_feature_control.i"		; CFGs
+	INCLUDE "med/med_feature_control.i"		; CFGs
 
 ; Aura output handling routines
 	IFNE	AURA
@@ -1058,6 +1058,14 @@ plr_nohisec:	move.w	d0,mmd_psecnum(a2)	;push back.
 		moveq	#0,d0			;playseq OFFSET = 0
 ; -------- FETCH BLOCK NUMBER FROM SEQUENCE ------------------------------
 plr_notagain:	move.w	d0,mmd_pseqnum(a2)	;remember new playseq pos
+
+		;CLR.W	$100			; DEBUG | w 0 100 2
+		CMP.W	MED_SONG_POS,D0		;START_POS REACHED? | KONEY
+		BLO.S	plr_chgblock		;GO INCREMENT AGAIN | KONEY
+		;IFNE	START_POS
+		;ENDC
+		MOVE.W	D0,MED_SONG_POS		;SAVE POSITION | KONEY
+
 		add.w	d0,d0
 		move.w	42(a0,d0.w),d0		;get number of the block
 		bpl.s	plr_changeblk		;neg. values for future expansion
@@ -1071,12 +1079,6 @@ plr_noadvseq_b:	cmp.w	msng_songlen(a4),d0	;is this the highest seq number??
 		blt.s	plr_notagain_b		;no.
 		moveq	#0,d0			;yes: restart song
 plr_notagain_b:	move.b	d0,mmd_pseqnum+1(a2)	;remember new playseq-#
-		;IFNE	START_POS
-		CMP.W	MED_START_POS,D0		;START_POS REACHED? | KONEY
-		BLO.S	plr_noMMD2_0		;GO INCREMENT AGAIN | KONEY
-		;ENDC
-		MOVE.W	D0,MED_SONG_POS		;SAVE POSITION | KONEY
-		MOVE.W	D0,MED_START_POS		;SAVE POSITION | KONEY
 		lea	msng_playseq(a4),a0	;offset of sequence table
 		move.b	0(a0,d0.w),d0		;get number of the block
 ; ********* BELOW CODE FOR BOTH FORMATS *********************************
@@ -3143,10 +3145,10 @@ MED_TRK_INFO_1:	DC.L 0
 MED_TRK_INFO_2:	DC.L 0
 MED_TRK_INFO_3:	DC.L 0
 	ENDC
-MED_SONG_POS:	DC.W 0	; Well the position...
+MED_SONG_POS:	DC.W START_POS	; Well the position...
 MED_BLOCK_LINE:	DC.W 0	; Line of block
 MED_STEPSEQ_POS:	DC.W 0	; Pos of the step sequencer 0-15
-MED_START_POS:	DC.W START_POS
+;MED_START_POS:	DC.W START_POS
 
 ; Fields in struct InstrExt (easier to access this way rather than
 ; searching through the module).
