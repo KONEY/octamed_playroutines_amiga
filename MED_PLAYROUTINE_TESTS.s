@@ -20,6 +20,7 @@ BAND_OFFSET=86*bpl
 bltx	=0	;BLITTER CONSTANTS
 bltoffs	=210*(w/8)+bltx/8
 ;********** Demo **********	; Demo-specific non-startup code below.
+	;CLR.W	$100			; DEBUG | w 0 100 2
 Demo:	;a4=VBR, a6=Custom Registers Base addr
 	;*--- init ---*
 	move.l	#VBint,$6c(a4)
@@ -75,12 +76,11 @@ MainLoop:
 	ANDI.W	#15,D0
 	MOVE.W	D0,MED_STEPSEQ_POS
 	MOVE.W	MED_SONG_POS,D0
-	;CLR.W	$100			; DEBUG | w 0 100 2
 
-	BSR.W	__CREATESCROLLSPACE	; NOW WE USE THE BLITTER HERE!
-	BSR.W	__BLITINPLACE		; FIRST BLITTATA
-	BSR.W	__SHIFTTEXT		; SHIFT DATI BUFFER?
-	BSR.W	__POPULATETXTBUFFER	; PUT SOMETHING
+	;BSR.W	__CREATESCROLLSPACE	; NOW WE USE THE BLITTER HERE!
+	;BSR.W	__BLITINPLACE		; FIRST BLITTATA
+	;BSR.W	__SHIFTTEXT		; SHIFT DATI BUFFER?
+	;BSR.W	__POPULATETXTBUFFER	; PUT SOMETHING
 
 	;*--- main loop end ---*
 	;BTST	#6,$BFE001
@@ -88,13 +88,61 @@ MainLoop:
 	;MOVE.W	#$0F0,$180(A6)	; show rastertime left down to $12c
 	;.DontShowRasterTime:
 
+	LEA	COPPERWAITS+6,A1
+	CLR.L	D0
+	MOVE.B	MED_TRK_0_NOTE,D0
+	ROL.L	#$2,D0		; expand bits to green
+	MOVE.W	D0,(A1)
+	MOVE.L	D0,D3
+	ROL.L	#$4,D3		; expand bits to green
+	ADD.L	D3,D0
+	ROL.L	#$4,D3
+	ADD.L	D3,D0		; expand bits to red
+
+	lea 16(a1),a1
+	CLR.L	D0
+	MOVE.B	MED_TRK_1_NOTE,D0
+	ROL.L	#$2,D0		; expand bits to green
+	MOVE.W	D0,(A1)
+	MOVE.L	D0,D3
+	ROL.L	#$4,D3		; expand bits to green
+	ADD.L	D3,D0
+	ROL.L	#$4,D3
+	ADD.L	D3,D0		; expand bits to red
+
+	lea 16(a1),a1
+	CLR.L	D0
+	MOVE.B	MED_TRK_2_NOTE,D0
+	ROL.L	#$2,D0		; expand bits to green
+	MOVE.W	D0,(A1)
+	MOVE.L	D0,D3
+	ROL.L	#$4,D3		; expand bits to green
+	ADD.L	D3,D0
+	ROL.L	#$4,D3
+	ADD.L	D3,D0		; expand bits to red
+
+	lea 16(a1),a1
+	CLR.L	D0
+	MOVE.B	MED_TRK_3_NOTE,D0
+	ROL.L	#$2,D0		; expand bits to green
+	MOVE.W	D0,(A1)
+	MOVE.L	D0,D3
+	ROL.L	#$4,D3		; expand bits to green
+	ADD.L	D3,D0
+	ROL.L	#$4,D3
+	ADD.L	D3,D0		; expand bits to red
+
 	; # CODE FOR BUTTON PRESS ##
+	BTST	#6,$BFE001
+	BNE.S	.skip
+	MOVE.W	#$0FF0,$DFF180	; show rastertime left down to $12c
+	.skip:
+
 	BTST	#6,$BFE001
 	BNE.S	.DontShowRasterTime
 	TST.W	LMBUTTON_STATUS
 	BNE.S	.DontShowRasterTime
 	MOVE.W	#1,LMBUTTON_STATUS
-	MOVE.W	#$F00,$DFF180	; show rastertime left down to $12c
 	ADD.W	#16,MED_SONG_POS
 	.DontShowRasterTime:
 	BTST	#6,$BFE001
@@ -328,7 +376,7 @@ AUDIOCHANLEVEL2:	DC.W 0
 AUDIOCHANLEVEL3:	DC.W 0
 FRAMESINDEX:	DC.W 4
 
-KONEYBG:		DC.L BG1		; INIT BG
+KONEYBG:		DC.L SCREEN1	; INIT BG
 DrawBuffer:	DC.L SCREEN2	; pointers to buffers to be swapped
 ViewBuffer:	DC.L SCREEN1
 
@@ -364,10 +412,9 @@ _TEXT:
 TXTSCROLLBUF:	DS.B	(bpl)*8
 _TXTSCROLLBUF:
 
-MED_MODULE:	INCBIN	"med/TECHNODETROIT_fix2021.med"	;<<<<< MODULE NAME HERE!
+MED_MODULE:	INCBIN	"med/LOST_OCTAMED_FILES_1.MED"	;<<<<< MODULE NAME HERE!
 KONEY2X:		INCBIN	"koney10x64.raw"
 BG1:		INCBIN	"BG_METAL2_320256_4.raw"
-;Module1:		INCBIN	"p61_testmod.p61"		; code $9104
 
 FONT:		DC.L	0,0			; SPACE CHAR
 		INCBIN	"scummfnt_8x752.raw",0
@@ -407,19 +454,27 @@ BplPtrs:
 	DC.W $100,BPLS*$1000+$200	;enable bitplanes
 
 COPPERWAITS:
-	DC.W $FE07,$FFFE
-	DC.W $0180,$0FFF
-	DC.W $FF07,$FFFE
-	DC.W $0180,$0011	; SCROLLAREA BG COLOR
-	DC.W $0182,$0AAA	; SCROLLING TEXT WHITE ON
+	DC.W $F207,$FFFE
+	DC.W $180,$001
+	DC.W $F407,$FFFE
+	DC.W $180,$000
 
-	DC.W $FFDF,$FFFE	; allow VPOS>$ff
+	DC.W $F507,$FFFE
+	DC.W $180,$001
+	DC.W $F707,$FFFE
+	DC.W $180,$000
 
-	DC.W $0807,$FFFE
-	DC.W $0180,$0FFF
-	DC.W $0907,$FFFE
-	DC.W $0180,$0000
-	DC.W $0182,$0000	; SCROLLING TEXT WHITE OFF
+	DC.W $F807,$FFFE
+	DC.W $180,$001
+	DC.W $FA07,$FFFE
+	DC.W $180,$000
+
+	DC.W $FB07,$FFFE
+	DC.W $180,$001
+	DC.W $FD07,$FFFE
+	DC.W $180,$000
+
+	;DC.W $FFDF,$FFFE	; allow VPOS>$ff
 
 	DC.W $FFFF,$FFFE	;magic value to end copperlist
 _Copper:
@@ -428,8 +483,8 @@ _Copper:
 	SECTION "ChipBuffers",BSS_C	;BSS doesn't count toward exe size
 ;*******************************************************************************
 
-SCREEN1:		DS.B 0	; Define storage for buffer 1
-SCREEN2:		DS.B 0	; two buffers
-GLITCHBUFFER:	DS.B 0	; some free space for glitch
+SCREEN1:		DS.B h*bwid	; Define storage for buffer 1
+SCREEN2:		DS.B 0		; two buffers
+GLITCHBUFFER:	DS.B 0		; some free space for glitch
 
 	END

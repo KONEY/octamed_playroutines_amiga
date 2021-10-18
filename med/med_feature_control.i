@@ -2,7 +2,7 @@
 ;
 MIDI		EQU	0	;1 = include MIDI code
 AUDDEV		EQU	0	;1 = allocate channels using audio.device
-SYNTH		EQU	0	;1 = include synth-sound handler
+SYNTH		EQU	1	;1 = include synth-sound handler
 CHECK		EQU	1	;1 = do range checkings (track, sample in mem etc.)
 RELVOL		EQU	1	;1 = include relative volume handling code
 IFFMOCT		EQU	0	;1 = play IFF multi-octave samples/ExtSamples correctly
@@ -43,9 +43,12 @@ EASY		EQU	1
 
 ;============================================================================
 
-SAMPLES_TRACKING	EQU	0	; Tracks samples#, notes etc - By KONEY
+; #### KONEY ####
+INSTR_TRACKING	EQU	1	; Tracks instruments#, notes etc TBD
 START_POS	EQU	0	; After SEQ 0 jump to #
-;LOOP_AT_END	EQU	0	; Stop at end? needs CHECK EQU 1
+SPLIT_RELOCS	EQU	0	; If 1 samples will be expected to be separated from song data, 
+				; at label "MED_SAMPLES:" so all the rest can be in fast ram
+; #### KONEY ####
 
 ; The MMD structure offsets
 mmd_id		EQU	0
