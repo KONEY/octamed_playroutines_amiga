@@ -333,7 +333,7 @@ pn_offaura:	jsr	_StopAura(pc)
 	
 ; -------- TURN OFF CHANNEL DMA, IF REQUIRED -----------------------------
 pn_offami:	cmp.b	#4,d7
-		bge.s	nodmaoff		;track #�>= 4: not an Amiga channel
+		bge.s	nodmaoff			;track #�>= 4: not an Amiga channel
 		move.l	d5,a1
 	IFNE	SYNTH
 		tst.l	d5
@@ -344,6 +344,13 @@ pn_offami:	cmp.b	#4,d7
 		beq.s	nostpdma
 	ENDC
 stpdma:		move.w	d4,$dff096		;stop this channel (dmacon)
+		MOVEM.L	A4,-(SP)
+		;CLR.W	$100			; DEBUG | w 0 100 2
+		LEA	MED_TRK_0_LEV,A4
+		ADD.W	D7,A4
+		ADD.W	D7,A4
+		MOVE.W	#0,(A4)
+		MOVEM.L	(SP)+,A4
 nostpdma:
 	IFNE	SYNTH
 		clr.l	trk_synthptr(a5)
@@ -382,10 +389,10 @@ noprevmidi:
 	ENDC
 ; handle decay (for tracks 0 - 3 only!!)
 	IFNE	HOLD
-		clr.b	trk_fadespd(a5)	;no fade yet..
+		clr.b	trk_fadespd(a5)			;no fade yet..
 		move.b	trk_initdecay(a5),trk_decay(a5)	;set decay
 	ENDC
-		clr.w	trk_vibroffs(a5)	;clr vibrato/tremolo offset
+		clr.w	trk_vibroffs(a5)			;clr vibrato/tremolo offset
 		or.w	d4,dmaonmsk-DB(a6)
 		move.l	d5,a0
 	IFNE	SYNTH
@@ -511,7 +518,6 @@ pn_nooffsovf:	movea.l	trk_audioaddr(a5),a1	;base of this channel's regs
 		lea	flags-DB(a6),a0
 		btst	#0,0(a0,d4.w)		;test flags.SSFLG_LOOP
 		bne.s	repeat
-		;CLR.W	$100			; DEBUG | w 0 100 2
 		move.l	#_chipzero,trk_sampleptr(a5) ;pointer of zero word
 		move.w	#1,trk_samplelen(a5)	;length: 1 word
 		sub.l	d0,d1
@@ -913,11 +919,20 @@ _IntHandler:	movem.l	d2-d7/a2-a6,-(sp)
 	IFEQ	CIAB|VBLANK
 		lea	DB,a6			;don't expect a1 to contain DB address
 	ENDC
+	IFNE	INSTR_TRACKING
+		;MOVE.W	#$0FFF,$DFF180		; show rastertime left down to $12c
+		;CLR.W	$100			; DEBUG | w 0 100 2
+		addq.w	#1,MED_TRK_0_LEV-DB(a6)	;inc elapsed #calls since last
+		addq.w	#1,MED_TRK_1_LEV-DB(a6)
+		addq.w	#1,MED_TRK_2_LEV-DB(a6)
+		addq.w	#1,MED_TRK_3_LEV-DB(a6)
+	ENDC
 		tst.b	bpmcounter-DB(a6)
 		bmi.s	plr_nobpm
 		subq.b	#1,bpmcounter-DB(a6)
 		ble.s	plr_bpmcnt0
 		bra.w	plr_exit
+
 plr_bpmcnt0:	move.b	#4,bpmcounter-DB(a6)
 plr_nobpm:	movea.l	_module-DB(a6),a2
 		move.l	a2,d0
@@ -1121,7 +1136,6 @@ plr_nohisec:	move.w	d0,mmd_psecnum(a2)	;push back.
 ; -------- FETCH BLOCK NUMBER FROM SEQUENCE ------------------------------
 plr_notagain:	move.w	d0,mmd_pseqnum(a2)	;remember new playseq pos
 
-		;CLR.W	$100			; DEBUG | w 0 100 2
 		CMP.W	MED_SONG_POS,D0		;START_POS REACHED? | KONEY
 		BLO.S	plr_chgblock		;GO INCREMENT AGAIN | KONEY
 		;IFNE	START_POS
@@ -2211,7 +2225,7 @@ pushtempo:	movea.l	craddr+4-DB(a6),a0
 		movea.l	craddr+8-DB(a6),a0
 		move.b	d1,(a0)
 	ENDC
-ST_x:		rts ;   vv-- These values are the SoundTracker tempos (approx.)
+ST_x:		rts	; vv-- These values are the SoundTracker tempos (approx.)
 sttempo:		dc.w	$0f00
 	IFNE	CIAB
 		dc.w	2417,4833,7250,9666,12083,14500,16916,19332,21436,24163
@@ -3208,6 +3222,10 @@ MED_TRK_2_INST:	DC.B 0
 MED_TRK_2_NOTE:	DC.B 0
 MED_TRK_3_INST:	DC.B 0
 MED_TRK_3_NOTE:	DC.B 0
+MED_TRK_0_LEV:	DC.W 0
+MED_TRK_1_LEV:	DC.W 0
+MED_TRK_2_LEV:	DC.W 0
+MED_TRK_3_LEV:	DC.W 0
 	ENDC
 MED_SONG_POS:	DC.W START_POS	; Well the position...
 MED_BLOCK_LINE:	DC.W 0		; Line of block

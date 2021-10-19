@@ -45,7 +45,6 @@ Demo:	;a4=VBR, a6=Custom Registers Base addr
 	BSR.W	__PRINT2X
 	; #### CPU INTENSIVE TASKS BEFORE STARTING MUSIC
 
-	;CLR.W	$100		; DEBUG | w 0 100 2
 	; in photon's wrapper comment:;move.w d2,$9a(a6) ;INTENA
 	JSR	_startmusic
 
@@ -88,9 +87,30 @@ MainLoop:
 	;MOVE.W	#$0F0,$180(A6)	; show rastertime left down to $12c
 	;.DontShowRasterTime:
 
+	LEA	MED_TRK_0_LEV(PC),A0
 	LEA	COPPERWAITS+6,A1
 	CLR.L	D0
-	MOVE.B	MED_TRK_0_NOTE,D0
+	moveq	#3,d7
+	.loop:
+	moveq	#15,D0		; maxvalue
+	CLR.W	$100		; DEBUG | w 0 100 2
+	;MOVE.w	(a0)+,D1
+	sub.w	(a0)+,D0		; -#frames/irqs since instrument trigger
+	bpl.s	.ok		; below minvalue?
+	moveq	#0,d0		; then set to minvalue
+	.ok:
+	ROL.L	D7,D0
+	ROL.L	D7,D0
+	ROL.L	D7,D0
+	move.w	d0,(a1)		; poke blue color
+	LEA	16(A1),A1
+	DBF	d7,.loop
+
+	BRA.S	.skip2
+
+	LEA	COPPERWAITS+6,A1
+	CLR.L	D0
+	MOVE.B	MED_TRK_3_LEV,D0
 	ROL.L	#$2,D0		; expand bits to green
 	MOVE.W	D0,(A1)
 	MOVE.L	D0,D3
@@ -132,6 +152,7 @@ MainLoop:
 	ROL.L	#$4,D3
 	ADD.L	D3,D0		; expand bits to red
 
+	.skip2:
 	; # CODE FOR BUTTON PRESS ##
 	BTST	#6,$BFE001
 	BNE.S	.skip
@@ -412,6 +433,7 @@ _TEXT:
 TXTSCROLLBUF:	DS.B	(bpl)*8
 _TXTSCROLLBUF:
 
+;MED_MODULE:	INCBIN	"med/playroutine_test.MED"		;<<<<< MODULE NAME HERE!
 MED_MODULE:	INCBIN	"med/LOST_OCTAMED_FILES_1.MED"	;<<<<< MODULE NAME HERE!
 KONEY2X:		INCBIN	"koney10x64.raw"
 BG1:		INCBIN	"BG_METAL2_320256_4.raw"
