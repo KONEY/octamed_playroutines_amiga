@@ -922,10 +922,10 @@ _IntHandler:	movem.l	d2-d7/a2-a6,-(sp)
 	IFNE	INSTR_TRACKING
 		;MOVE.W	#$0FFF,$DFF180		; show rastertime left down to $12c
 		;CLR.W	$100			; DEBUG | w 0 100 2
-		addq.w	#1,MED_TRK_0_LEV-DB(a6)	;inc elapsed #calls since last
-		addq.w	#1,MED_TRK_1_LEV-DB(a6)
-		addq.w	#1,MED_TRK_2_LEV-DB(a6)
-		addq.w	#1,MED_TRK_3_LEV-DB(a6)
+		;addq.w	#1,MED_TRK_0_LEV-DB(a6)	;inc elapsed #calls since last
+		;addq.w	#1,MED_TRK_1_LEV-DB(a6)
+		;addq.w	#1,MED_TRK_2_LEV-DB(a6)
+		;addq.w	#1,MED_TRK_3_LEV-DB(a6)
 	ENDC
 		tst.b	bpmcounter-DB(a6)
 		bmi.s	plr_nobpm
@@ -3222,10 +3222,10 @@ MED_TRK_2_INST:	DC.B 0
 MED_TRK_2_NOTE:	DC.B 0
 MED_TRK_3_INST:	DC.B 0
 MED_TRK_3_NOTE:	DC.B 0
-MED_TRK_0_LEV:	DC.W 0
-MED_TRK_1_LEV:	DC.W 0
-MED_TRK_2_LEV:	DC.W 0
-MED_TRK_3_LEV:	DC.W 0
+MED_TRK_0_LEV:	DC.W $4000
+MED_TRK_1_LEV:	DC.W $4000
+MED_TRK_2_LEV:	DC.W $4000
+MED_TRK_3_LEV:	DC.W $4000
 	ENDC
 MED_SONG_POS:	DC.W START_POS	; Well the position...
 MED_BLOCK_LINE:	DC.W 0		; Line of block

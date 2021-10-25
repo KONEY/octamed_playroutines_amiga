@@ -36,7 +36,7 @@ Demo:	;a4=VBR, a6=Custom Registers Base addr
 	;*--- start copper ---*
 	lea	Screen1,a0
 	moveq	#bpl,d0
-	lea	BplPtrs+2,a1
+	lea	Copper\.BplPtrs+2,a1
 	moveq	#bpls-1,d1
 	bsr.w	PokePtrs
 
@@ -61,7 +61,7 @@ MainLoop:
 	;*--- show one... ---*
 	move.l	a3,a0
 	move.l	#bpl*256,d0
-	lea	BplPtrs+2,a1
+	lea	Copper\.BplPtrs+2,a1
 	moveq	#bpls-1,d1
 	bsr.w	PokePtrs
 	;*--- ...draw into the other(a2) ---*
@@ -87,30 +87,78 @@ MainLoop:
 	;MOVE.W	#$0F0,$180(A6)	; show rastertime left down to $12c
 	;.DontShowRasterTime:
 
+	ADDQ.W	#1,MED_TRK_0_LEV	;inc elapsed #calls since last
+	ADDQ.W	#1,MED_TRK_1_LEV
+	ADDQ.W	#1,MED_TRK_2_LEV
+	ADDQ.W	#1,MED_TRK_3_LEV
+
 	LEA	MED_TRK_0_LEV(PC),A0
-	LEA	COPPERWAITS+6,A1
+	LEA	Copper\.LEVELWAITS+6,A1
 	CLR.L	D0
 	moveq	#3,d7
 	.loop:
 	moveq	#15,D0		; maxvalue
-	CLR.W	$100		; DEBUG | w 0 100 2
-	;MOVE.w	(a0)+,D1
 	sub.w	(a0)+,D0		; -#frames/irqs since instrument trigger
 	bpl.s	.ok		; below minvalue?
 	moveq	#0,d0		; then set to minvalue
+	MOVEM.W	#0,MED_TRK_0_NOTE	 ; RESET TWO BYTES
 	.ok:
-	ROL.L	D7,D0
-	ROL.L	D7,D0
-	ROL.L	D7,D0
-	move.w	d0,(a1)		; poke blue color
+	ROL.L	#$4,D0		; expand bits to green
+	ROL.L	#$4,D0		; expand bits to green
+	move.w	d0,(a1)		; poke color
 	LEA	16(A1),A1
 	DBF	d7,.loop
 
-	BRA.S	.skip2
+	;CLR.W	$100		; DEBUG | w 0 100 2
+	;BRA.S	.skip2
 
-	LEA	COPPERWAITS+6,A1
+	LEA	Copper\.INSTRWAITS+6,A1
 	CLR.L	D0
-	MOVE.B	MED_TRK_3_LEV,D0
+	MOVE.B	MED_TRK_0_INST,D0
+	ROL.L	#$2,D0		; expand bits to green
+	MOVE.W	D0,(A1)
+	MOVE.L	D0,D3
+	ROL.L	#$4,D3		; expand bits to green
+	ADD.L	D3,D0
+	ROL.L	#$4,D3
+	ADD.L	D3,D0		; expand bits to red
+
+	lea 16(a1),a1
+	CLR.L	D0
+	MOVE.B	MED_TRK_1_INST,D0
+	ROL.L	#$2,D0		; expand bits to green
+	MOVE.W	D0,(A1)
+	MOVE.L	D0,D3
+	ROL.L	#$4,D3		; expand bits to green
+	ADD.L	D3,D0
+	ROL.L	#$4,D3
+	ADD.L	D3,D0		; expand bits to red
+
+	lea 16(a1),a1
+	CLR.L	D0
+	MOVE.B	MED_TRK_2_INST,D0
+	ROL.L	#$2,D0		; expand bits to green
+	MOVE.W	D0,(A1)
+	MOVE.L	D0,D3
+	ROL.L	#$4,D3		; expand bits to green
+	ADD.L	D3,D0
+	ROL.L	#$4,D3
+	ADD.L	D3,D0		; expand bits to red
+
+	lea 16(a1),a1
+	CLR.L	D0
+	MOVE.B	MED_TRK_3_INST,D0
+	ROL.L	#$2,D0		; expand bits to green
+	MOVE.W	D0,(A1)
+	MOVE.L	D0,D3
+	ROL.L	#$4,D3		; expand bits to green
+	ADD.L	D3,D0
+	ROL.L	#$4,D3
+	ADD.L	D3,D0		; expand bits to red
+
+	LEA	Copper\.NOTEWAITS+6,A1
+	CLR.L	D0
+	MOVE.B	MED_TRK_0_NOTE,D0
 	ROL.L	#$2,D0		; expand bits to green
 	MOVE.W	D0,(A1)
 	MOVE.L	D0,D3
@@ -454,13 +502,13 @@ Copper:
 
 	DC.W $102,0	;SCROLL REGISTER (AND PLAYFIELD PRI)
 
-Palette:						;Some kind of palette (3 bpls=8 colors)
-	DC.W $0180,$0000,$0182,$0000,$0184,$0111,$0186,$0122
+	.Palette:						;Some kind of palette (3 bpls=8 colors)
+	DC.W $0180,$0111,$0182,$0000,$0184,$0111,$0186,$0122
 	DC.W $0188,$0333,$018A,$0444,$018C,$0555,$018E,$0455
 	DC.W $0190,$0666,$0192,$0888,$0194,$0999,$0196,$0AAA
 	DC.W $0198,$09AA,$019A,$0FFF,$019C,$0FFF,$019E,$0FFF
 
-BplPtrs:
+	.BplPtrs:
 	DC.W $E0,0
 	DC.W $E2,0
 	DC.W $E4,0
@@ -475,26 +523,68 @@ BplPtrs:
 	DC.W $F6,0		;full 6 ptrs, in case you increase bpls
 	DC.W $100,BPLS*$1000+$200	;enable bitplanes
 
-COPPERWAITS:
-	DC.W $F207,$FFFE
-	DC.W $180,$001
-	DC.W $F407,$FFFE
+	.LEVELWAITS:
+	DC.W $D207,$FFFE
 	DC.W $180,$000
+	DC.W $D407,$FFFE
+	DC.W $180,$0111
+
+	DC.W $D507,$FFFE
+	DC.W $180,$000
+	DC.W $D707,$FFFE
+	DC.W $180,$0111
+
+	DC.W $D807,$FFFE
+	DC.W $180,$000
+	DC.W $DA07,$FFFE
+	DC.W $180,$0111
+
+	DC.W $DB07,$FFFE
+	DC.W $180,$001
+	DC.W $DD07,$FFFE
+	DC.W $180,$0111
+
+	.INSTRWAITS:
+	DC.W $E207,$FFFE
+	DC.W $180,$000
+	DC.W $E407,$FFFE
+	DC.W $180,$0111
+
+	DC.W $E507,$FFFE
+	DC.W $180,$000
+	DC.W $E707,$FFFE
+	DC.W $180,$0111
+
+	DC.W $E807,$FFFE
+	DC.W $180,$000
+	DC.W $EA07,$FFFE
+	DC.W $180,$0111
+
+	DC.W $EB07,$FFFE
+	DC.W $180,$000
+	DC.W $ED07,$FFFE
+	DC.W $180,$0111
+
+	.NOTEWAITS:
+	DC.W $F207,$FFFE
+	DC.W $180,$000
+	DC.W $F407,$FFFE
+	DC.W $180,$0111
 
 	DC.W $F507,$FFFE
-	DC.W $180,$001
-	DC.W $F707,$FFFE
 	DC.W $180,$000
+	DC.W $F707,$FFFE
+	DC.W $180,$0111
 
 	DC.W $F807,$FFFE
-	DC.W $180,$001
-	DC.W $FA07,$FFFE
 	DC.W $180,$000
+	DC.W $FA07,$FFFE
+	DC.W $180,$0111
 
 	DC.W $FB07,$FFFE
-	DC.W $180,$001
-	DC.W $FD07,$FFFE
 	DC.W $180,$000
+	DC.W $FD07,$FFFE
+	DC.W $180,$0111
 
 	;DC.W $FFDF,$FFFE	; allow VPOS>$ff
 
