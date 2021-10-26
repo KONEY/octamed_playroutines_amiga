@@ -25,8 +25,6 @@
 ; KONEY Version 0.9 | 01.06.2021
 ;============================================================================
 
-	INCLUDE "med/med_feature_control.i"		; CFGs
-
 ; Aura output handling routines
 	IFNE	AURA
 		;also includes the SECTION cmd...
@@ -344,13 +342,14 @@ pn_offami:	cmp.b	#4,d7
 		beq.s	nostpdma
 	ENDC
 stpdma:		move.w	d4,$dff096		;stop this channel (dmacon)
+	IFNE	INSTR_TRACKING
 		MOVEM.L	A4,-(SP)
-		;CLR.W	$100			; DEBUG | w 0 100 2
-		LEA	MED_TRK_0_LEV,A4
+		LEA	MED_TRK_0_COUNT,A4
 		ADD.W	D7,A4
 		ADD.W	D7,A4
 		MOVE.W	#0,(A4)
 		MOVEM.L	(SP)+,A4
+	ENDC
 nostpdma:
 	IFNE	SYNTH
 		clr.l	trk_synthptr(a5)
@@ -919,14 +918,14 @@ _IntHandler:	movem.l	d2-d7/a2-a6,-(sp)
 	IFEQ	CIAB|VBLANK
 		lea	DB,a6			;don't expect a1 to contain DB address
 	ENDC
-	IFNE	INSTR_TRACKING
+	;IFNE	INSTR_TRACKING
 		;MOVE.W	#$0FFF,$DFF180		; show rastertime left down to $12c
 		;CLR.W	$100			; DEBUG | w 0 100 2
-		;addq.w	#1,MED_TRK_0_LEV-DB(a6)	;inc elapsed #calls since last
-		;addq.w	#1,MED_TRK_1_LEV-DB(a6)
-		;addq.w	#1,MED_TRK_2_LEV-DB(a6)
-		;addq.w	#1,MED_TRK_3_LEV-DB(a6)
-	ENDC
+		;addq.w	#1,MED_TRK_0_COUNT-DB(a6)	;inc elapsed #calls since last
+		;addq.w	#1,MED_TRK_1_COUNT-DB(a6)
+		;addq.w	#1,MED_TRK_2_COUNT-DB(a6)
+		;addq.w	#1,MED_TRK_3_COUNT-DB(a6)
+	;ENDC
 		tst.b	bpmcounter-DB(a6)
 		bmi.s	plr_nobpm
 		subq.b	#1,bpmcounter-DB(a6)
@@ -3222,10 +3221,10 @@ MED_TRK_2_INST:	DC.B 0
 MED_TRK_2_NOTE:	DC.B 0
 MED_TRK_3_INST:	DC.B 0
 MED_TRK_3_NOTE:	DC.B 0
-MED_TRK_0_LEV:	DC.W $4000
-MED_TRK_1_LEV:	DC.W $4000
-MED_TRK_2_LEV:	DC.W $4000
-MED_TRK_3_LEV:	DC.W $4000
+MED_TRK_0_COUNT:	DC.W $4000
+MED_TRK_1_COUNT:	DC.W $4000
+MED_TRK_2_COUNT:	DC.W $4000
+MED_TRK_3_COUNT:	DC.W $4000
 	ENDC
 MED_SONG_POS:	DC.W START_POS	; Well the position...
 MED_BLOCK_LINE:	DC.W 0		; Line of block
@@ -3419,9 +3418,9 @@ _periodtable:
 	IFNE	EASY
 	;easymod:		INCBIN	"med/octamed_test.med"	;<<<<< MODULE NAME HERE!
 	ENDC
-	IFEQ	SPLIT_RELOCS
-_chipzero:	dc.l	0	; move this to chip ram after SAMPLES!
-	ENDC
+	;IFEQ	SPLIT_RELOCS
+;_chipzero:	dc.l	0	; move this to chip ram after SAMPLES!
+	;ENDC
 _modnum:		dc.w	0	; number of module to play
 
 ; macros for entering offsets
