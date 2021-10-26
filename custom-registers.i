@@ -1,8 +1,8 @@
 ;********** relevant blitter registers **********
 ;base reg $dff000
 
-BLTDDAT	= 0	;result of the last word. used for bob collision detection and 
-		;MFM decoding
+BLTDDAT	= $DFF000	;result of the last word. used for bob collision detection and 
+			;MFM decoding
 DMACONR	= $DFF002	;bit 14=blitter busy flag
 
 ;blitter operation setup

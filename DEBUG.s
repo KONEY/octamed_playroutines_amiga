@@ -19,13 +19,13 @@ Demo:	;a4=VBR, a6=Custom Registers Base addr
 	MOVE.W	#%1110000000000000,INTENA	; Master and lev6	; NO COPPER-IRQ!
 	MOVE.W	#%1000011111100000,DMACON
 	;*--- clear screens ---*
-	lea	Screen1,a1
+	lea	SCREEN1,a1
 	bsr.w	ClearScreen
-	lea	Screen2,a1
+	lea	SCREEN2,a1
 	bsr.w	ClearScreen
 	bsr.w	WaitBlitter
 	;*--- start copper ---*
-	lea	Screen1,a0
+	lea	SCREEN1,a0
 	moveq	#bpl,d0
 	lea	Copper\.BplPtrs+2,a1
 	moveq	#bpls-1,d1
@@ -54,7 +54,8 @@ MainLoop:
 	bsr.w	PokePtrs
 	;*--- ...draw into the other(a2) ---*
 	move.l	a2,a1
-	;bsr.w	ClearScreen
+	lea	ViewBuffer,a1
+	bsr.w	ClearScreen
 	bsr.w	WaitBlitter
 	MOVE.L	KONEYBG,DrawBuffer
 	; do stuff here :)
@@ -68,7 +69,7 @@ MainLoop:
 	; # CODE FOR BUTTON PRESS ##
 	BTST	#6,$BFE001
 	BNE.S	.skip
-	MOVE.W	#$0FF0,$DFF180	; show rastertime left down to $12c
+
 	.skip:
 
 	;BTST	#6,$BFE001
@@ -82,7 +83,7 @@ MainLoop:
 	;BEQ.S	.DontResetStatus
 	;MOVE.W	#0,LMBUTTON_STATUS
 	;.DontResetStatus:
-
+	MOVE.W	#$0FF0,$DFF180	; show rastertime left down to $12c
 	BTST	#2,$DFF016	; POTINP - RMB pressed?
 	BNE.W	MainLoop		; then loop
 	;*--- exit ---*
@@ -101,12 +102,12 @@ PokePtrs:				; Generic, poke ptrs into copper list
 	dbf	d1,.bpll
 	rts
 ClearScreen:			; a1=screen destination address to clear
-	bsr.w	WaitBlitter
-	clr.w	BLTDMOD			; destination modulo
-	move.l	#$01000000,BLTCON0	 	; set operation type in BLTCON0/1
-	move.l	a1,BLTDPTH		; destination address
-	move.l	#h*bpls*64+bpl/2,BLTSIZE	; blitter operation size
-	rts
+	BSR.W	WaitBlitter
+	CLR.W	BLTDMOD			; destination modulo
+	MOVE.L	#$01000000,BLTCON0	 	; set operation type in BLTCON0/1
+	MOVE.L	A1,BLTDPTH		; destination address
+	MOVE.W	#h*bpls*64+bpl/2,BLTSIZE	; blitter operation size
+	RTS
 VBint:				; Blank template VERTB interrupt
 	movem.l d0/a6,-(sp)		;Save used registers
 	btst	#5,$DFF01F	; check if it's our vertb int.
@@ -133,7 +134,8 @@ ViewBuffer:	DC.L SCREEN1
 ;*******************************************************************************
 	SECTION	"ChipData",DATA_C	;declared data that must be in chipmem
 ;*******************************************************************************
-BG1:		INCBIN "GFX_MEDPLAYER.raw"
+BG1:	INCBIN "GFX_MEDPLAYER.raw"
+	DS.B h*bpl*2
 
 Copper:
 	DC.W $1FC,0	;Slow fetch mode, remove if AGA demo.
@@ -160,7 +162,7 @@ Copper:
 	DC.W $F2,0
 	DC.W $F4,0
 	DC.W $F6,0		;full 6 ptrs, in case you increase bpls
-	DC.W $100,BPLS*$1000+$200	;enable bitplanes
+	DC.W $100,bpls*$1000+$200	;enable bitplanes
 
 	.Palette:			;Some kind of palette (3 bpls=8 colors)
 	DC.W $0180,$0111,$0182,$0FFF,$0184,$0111,$0186,$0122
@@ -187,7 +189,7 @@ _Copper:
 	SECTION "ChipBuffers",BSS_C	;BSS doesn't count toward exe size
 ;*******************************************************************************
 
-SCREEN1:		DS.B h*bwid	; Define storage for buffer 1
-SCREEN2:		DS.B h*bwid	; two buffers
+SCREEN1:		DS.W 1		; Define storage for buffer 1
+SCREEN2:		DS.W 1		; two buffers
 
 	END

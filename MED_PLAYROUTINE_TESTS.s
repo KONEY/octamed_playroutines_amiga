@@ -3,12 +3,12 @@
 	INCDIR	"NAS:AMIGA/CODE/octamed_playroutines_amiga/"
 	SECTION	"Code",CODE
 	INCLUDE	"custom-registers.i"
-	INCLUDE	"PhotonsMiniWrapper1.04!.S"
+	INCLUDE	"PhotonsMiniWrapper1.04.S"
 	INCLUDE	"med/med_feature_control.i"		; MED CFGs
 ;********** Constants **********
 w=320		;screen width, height, depth
 h=256
-bpls=3		;handy values:
+bpls=1		;handy values:
 bpl=w/16*2	;byte-width of 1 bitplane line (40)
 bwid=bpls*bpl	;byte-width of 1 pixel line (all bpls)
 
@@ -20,13 +20,13 @@ Demo:	;a4=VBR, a6=Custom Registers Base addr
 	MOVE.W	#%1110000000000000,INTENA	; Master and lev6	; NO COPPER-IRQ!
 	MOVE.W	#%1000011111100000,DMACON
 	;*--- clear screens ---*
-	lea	Screen1,a1
+	lea	SCREEN1,a1
 	;bsr.w	ClearScreen
-	lea	Screen2,a1
+	lea	SCREEN2,a1
 	;bsr.w	ClearScreen
 	;bsr.w	WaitBlitter
 	;*--- start copper ---*
-	lea	Screen1,a0
+	lea	SCREEN1,a0
 	moveq	#bpl,d0
 	lea	Copper\.BplPtrs+2,a1
 	moveq	#bpls-1,d1
@@ -55,9 +55,10 @@ MainLoop:
 	bsr.w	PokePtrs
 	;*--- ...draw into the other(a2) ---*
 	move.l	a2,a1
-	;bsr	ClearScreen
+	;bsr.w	ClearScreen
 	;bsr.w	WaitBlitter
 	MOVE.L	KONEYBG,DrawBuffer
+	BSR.W	__FILLRNDBG	; SOME DUMMY OPERATION...
 	; do stuff here :)
 
 	MOVE.W	MED_STEPSEQ_POS,D0
@@ -232,12 +233,12 @@ PokePtrs:				; Generic, poke ptrs into copper list
 	dbf	d1,.bpll
 	rts
 ClearScreen:			; a1=screen destination address to clear
-	bsr.W	WaitBlitter
-	clr.w	$66(a6)		; destination modulo
-	move.l	#$01000000,$40(a6)	; set operation type in BLTCON0/1
-	move.l	a1,$54(a6)	; destination address
-	move.l	#h*bpls*64+bpl/2,$58(a6)	;blitter operation size
-	rts
+	BSR.W	WaitBlitter
+	CLR.W	BLTDMOD			; destination modulo
+	MOVE.L	#$01000000,BLTCON0	 	; set operation type in BLTCON0/1
+	MOVE.L	A1,BLTDPTH		; destination address
+	MOVE.W	#h*bpls*64+bpl/2,BLTSIZE	; blitter operation size
+	RTS
 VBint:				; Blank template VERTB interrupt
 	btst	#5,$DFF01F	; check if it's our vertb int.
 	beq.s	.notvb
@@ -245,6 +246,30 @@ VBint:				; Blank template VERTB interrupt
 	move.w	#$20,$DFF09C	; KONEY REFACTOR
 	.notvb:	
 	rte
+
+__FILLRNDBG:
+	MOVEM.L	D0-A6,-(SP)	; SAVE TO STACK
+	MOVE.L	KONEYBG,A4	; SOURCE DATA
+	ADD.L	#100*bpl,A4
+	CLR	D4
+	MOVE.B	#8-1,D4		; QUANTE LINEE
+	.OUTERLOOP:		; NUOVA RIGA
+	CLR	D6
+	MOVE.B	#bpl-1,D6		; RESET D6
+	.INNERLOOP:
+	BSR.S	_RandomByte
+	MOVE.B	D5,(A4)+
+	DBRA	D6,.INNERLOOP
+	DBRA	D4,.OUTERLOOP
+	MOVEM.L	(SP)+,D0-A6	; FETCH FROM STACK
+	RTS
+
+_RandomWord:	bsr	_RandomByte
+		rol.w	#8,d5
+_RandomByte:	move.b	$dff007,d5	;$dff00a $dff00b for mouse pos
+		move.b	$bfd800,d3
+		eor.b	d3,d5
+		rts
 
 ;********** Fastmem Data **********
 LMBUTTON_STATUS:	DC.W 0
@@ -254,7 +279,7 @@ AUDIOCHLEV_2:	DC.W 0
 AUDIOCHLEV_3:	DC.W 0
 FRAMESINDEX:	DC.W 4
 
-KONEYBG:		DC.L BG1	; INIT BG
+KONEYBG:		DC.L BG1		; INIT BG
 DrawBuffer:	DC.L SCREEN2	; pointers to buffers to be swapped
 ViewBuffer:	DC.L SCREEN1
 
@@ -271,7 +296,7 @@ _chipzero:	DC.L 0
 		DC.L 0,0	 				; DUMMY
 
 BG1:		INCBIN "GFX_MEDPLAYER.raw"
-		DS.B bpl*h*2	
+		DS.B bpl*h	
 
 Copper:
 	DC.W $1FC,0	;Slow fetch mode, remove if AGA demo.
@@ -335,7 +360,7 @@ Copper:
 	DC.W $BB07,$FFFE
 	DC.W $0182,$001
 	DC.W $BD07,$FFFE
-	DC.W $0182,$0111
+	DC.W $0182,$0FFF
 
 	.INSTRWAITS:
 	DC.W $D207,$FFFE
@@ -356,7 +381,7 @@ Copper:
 	DC.W $DB07,$FFFE
 	DC.W $0182,$0000
 	DC.W $DD07,$FFFE
-	DC.W $0182,$0111
+	DC.W $0182,$0FFF
 
 	.NOTEWAITS:
 	DC.W $F207,$FFFE
@@ -377,19 +402,19 @@ Copper:
 	DC.W $FB07,$FFFE
 	DC.W $0182,$0000
 	DC.W $FD07,$FFFE
-	DC.W $0182,$0111
+	DC.W $0182,$0AAA
 
 	DC.W $FFDF,$FFFE		; allow VPOS>$ff
 
-	DC.W $FFFF,$FFFE		;magic value to end copperlist
+	DC.W $FFFF,$FFFE		; magic value to end copperlist
 _Copper:
 
 ;*******************************************************************************
 	SECTION "ChipBuffers",BSS_C	;BSS doesn't count toward exe size
 ;*******************************************************************************
 
-SCREEN1:		DS.B h*bwid	; Define storage for buffer 1
-SCREEN2:		DS.B 0		; two buffers
+SCREEN1:		DS.W 1		; Define storage for buffer 1
+SCREEN2:		DS.W 1		; two buffers
 GLITCHBUFFER:	DS.B 0		; some free space for glitch
 
 	END
