@@ -22,7 +22,7 @@
 ;
 ;============================================================================
 ; REFACTOR, DEBUG, EXTENDED FEATURES BY KONEY | koney.org | github.com/KONEY
-; KONEY Version 0.9 | 01.06.2021
+; KONEY Version 1.0 | 30.10.2021
 ;============================================================================
 
 ; Aura output handling routines
@@ -3213,7 +3213,7 @@ fxplineblk:	dc.l 0 ;for reading effects
 
 ; ##### KONEY MOD ######
 	IFNE	INSTR_TRACKING
-MED_TRK_0_INST:	DC.B 0		; sample#, framescount, note...
+MED_TRK_0_INST:	DC.B 0		; sample# note...
 MED_TRK_0_NOTE:	DC.B 0
 MED_TRK_1_INST:	DC.B 0
 MED_TRK_1_NOTE:	DC.B 0

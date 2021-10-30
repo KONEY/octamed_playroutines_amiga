@@ -73,7 +73,6 @@ MainLoop:
 	;.DontShowRasterTime:
 
 	IFNE	INSTR_TRACKING
-
 	LEA	MED_TRK_0_COUNT(PC),A0
 	LEA	Copper\.LEVELWAITS+6,A1
 	LEA	AUDIOCHLEV_0,A2
@@ -99,9 +98,6 @@ MainLoop:
 	ADDQ.W	#1,MED_TRK_1_COUNT
 	ADDQ.W	#1,MED_TRK_2_COUNT
 	ADDQ.W	#1,MED_TRK_3_COUNT
-
-	;CLR.W	$100		; DEBUG | w 0 100 2
-	;BRA.W	.skip2
 
 	LEA	Copper\.INSTRWAITS+6,A1
 	CLR.L	D0
@@ -190,8 +186,15 @@ MainLoop:
 	ADD.L	D3,D0
 	ROL.L	#$4,D3
 	ADD.L	D3,D0		; expand bits to red
-
 	.skip2:
+
+	;## CODE TO CHECK FOR SPECIFIC INTSRUMENT+NOTE
+	MOVE.W	MED_TRK_0_INST,D0	; 1 WORD TO TAKE 2 BYTES FROM CH0
+	CMP.W	#$71E,D0		; CH0 INST 07 NOTE F-3 = SNARE	; 0000011100011110
+	BNE.S	.noNote
+	MOVE.W	AUDIOCHLEV_0,$DFF180
+	.noNote:
+	
 	ENDC
 
 	; # CODE FOR BUTTON PRESS ##
@@ -288,8 +291,8 @@ ViewBuffer:	DC.L SCREEN1
 ;*******************************************************************************
 	SECTION	"ChipData",DATA_C	;declared data that must be in chipmem
 ;*******************************************************************************
-;MED_MODULE:	INCBIN "med/playroutine_test.MED"		;<<<<< MODULE NAME HERE!
 MED_MODULE:	INCBIN "med/mammagamma.med"		;<<<<< MODULE NAME HERE!
+;MED_MODULE:	INCBIN "med/mammagamma.med"		;<<<<< MODULE NAME HERE!
 	;IFNE	SPLIT_RELOCS
 _chipzero:	DC.L 0
 	;ENDC
@@ -340,6 +343,12 @@ Copper:
 	DC.W $134,0,$136,0	; 5
 	DC.W $138,0,$13A,0	; 6
 	DC.W $13C,0,$13E,0	; 7
+
+	.NOTEINSTRWAIT:
+	DC.W $A207,$FFFE
+	DC.W $0182,$0AAA
+	DC.W $A407,$FFFE
+	DC.W $0182,$0FFF
 
 	.LEVELWAITS:
 	DC.W $B207,$FFFE
