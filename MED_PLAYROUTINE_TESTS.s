@@ -58,9 +58,9 @@ MainLoop:
 	;bsr.w	ClearScreen
 	;bsr.w	WaitBlitter
 	MOVE.L	KONEYBG,DrawBuffer
+
 	BSR.W	__FILLRNDBG	; SOME DUMMY OPERATION...
 	; do stuff here :)
-
 	MOVE.W	MED_STEPSEQ_POS,D0
 	ANDI.W	#15,D0
 	MOVE.W	D0,MED_STEPSEQ_POS
@@ -110,7 +110,7 @@ MainLoop:
 	ROL.L	#$4,D3
 	ADD.L	D3,D0		; expand bits to red
 
-	lea 16(a1),a1
+	LEA	16(A1),A1
 	CLR.L	D0
 	MOVE.B	MED_TRK_1_INST,D0
 	ROL.L	#$2,D0		; expand bits to green
@@ -121,7 +121,7 @@ MainLoop:
 	ROL.L	#$4,D3
 	ADD.L	D3,D0		; expand bits to red
 
-	lea 16(a1),a1
+	LEA	16(A1),A1
 	CLR.L	D0
 	MOVE.B	MED_TRK_2_INST,D0
 	ROL.L	#$2,D0		; expand bits to green
@@ -132,7 +132,7 @@ MainLoop:
 	ROL.L	#$4,D3
 	ADD.L	D3,D0		; expand bits to red
 
-	lea 16(a1),a1
+	LEA	16(A1),A1
 	CLR.L	D0
 	MOVE.B	MED_TRK_3_INST,D0
 	ROL.L	#$2,D0		; expand bits to green
@@ -154,7 +154,7 @@ MainLoop:
 	ROL.L	#$4,D3
 	ADD.L	D3,D0		; expand bits to red
 
-	lea 16(a1),a1
+	LEA	16(A1),A1
 	CLR.L	D0
 	MOVE.B	MED_TRK_1_NOTE,D0
 	ROL.L	#$2,D0		; expand bits to green
@@ -165,7 +165,7 @@ MainLoop:
 	ROL.L	#$4,D3
 	ADD.L	D3,D0		; expand bits to red
 
-	lea 16(a1),a1
+	LEA	16(A1),A1
 	CLR.L	D0
 	MOVE.B	MED_TRK_2_NOTE,D0
 	ROL.L	#$2,D0		; expand bits to green
@@ -176,7 +176,7 @@ MainLoop:
 	ROL.L	#$4,D3
 	ADD.L	D3,D0		; expand bits to red
 
-	lea 16(a1),a1
+	LEA	16(A1),A1
 	CLR.L	D0
 	MOVE.B	MED_TRK_3_NOTE,D0
 	ROL.L	#$2,D0		; expand bits to green
@@ -193,6 +193,7 @@ MainLoop:
 	CMP.W	#$71E,D0		; CH0 INST 07 NOTE F-3 = SNARE	; 0000011100011110
 	BNE.S	.noNote
 	MOVE.W	AUDIOCHLEV_0,$DFF180
+	BRA.S	.skip
 	.noNote:
 	
 	ENDC
@@ -255,10 +256,10 @@ __FILLRNDBG:
 	MOVE.L	KONEYBG,A4	; SOURCE DATA
 	ADD.L	#100*bpl,A4
 	CLR	D4
-	MOVE.B	#8-1,D4		; QUANTE LINEE
+	MOVE.B	#4-1,D4		; QUANTE LINEE
 	.OUTERLOOP:		; NUOVA RIGA
 	CLR	D6
-	MOVE.B	#bpl-1,D6		; RESET D6
+	MOVE.B	#bpl/2-1,D6		; RESET D6
 	.INNERLOOP:
 	BSR.S	_RandomByte
 	MOVE.B	D5,(A4)+
@@ -291,8 +292,8 @@ ViewBuffer:	DC.L SCREEN1
 ;*******************************************************************************
 	SECTION	"ChipData",DATA_C	;declared data that must be in chipmem
 ;*******************************************************************************
+;MED_MODULE:	INCBIN "med/KETAMUSkOLAR_2020FIX.med"		;<<<<< MODULE NAME HERE!
 MED_MODULE:	INCBIN "med/mammagamma.med"		;<<<<< MODULE NAME HERE!
-;MED_MODULE:	INCBIN "med/mammagamma.med"		;<<<<< MODULE NAME HERE!
 	;IFNE	SPLIT_RELOCS
 _chipzero:	DC.L 0
 	;ENDC
