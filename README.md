@@ -4,8 +4,9 @@ Based on Routines for programers utilising the OctaMED Program: http://m68k.amin
 I managed to make this code work with Photon's mini Wrapper and I'm adding more things.
 Any help would be appreciated :)
 
-# Release notes of V1.0
+![Preview](https://github.com/KONEY/octamed_playroutines_amiga/blob/main/preview.png)
 
+# Release notes for V1.0
 Fixed a few thing but mostly added support for visualizations. In orded to do that I got inspiration from P61 player
 but added some interesting things like tracking of what instrument number is playing and what note.
 There in my opinion are much more useful values to sync events to music, better than using special commands therefore
