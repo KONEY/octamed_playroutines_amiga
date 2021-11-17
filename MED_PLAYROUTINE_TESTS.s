@@ -36,8 +36,8 @@ Demo:	;a4=VBR, a6=Custom Registers Base addr
 	; #### CPU INTENSIVE TASKS BEFORE STARTING MUSIC
 
 	; in photon's wrapper comment:;move.w d2,$9a(a6) ;INTENA
+	MOVE.W	#2,MED_START_POS	 ; skip to pos# after first block
 	JSR	_startmusic
-
 	MOVE.L	#Copper,COP1LC
 ;********************  main loop  ********************
 MainLoop:
@@ -253,13 +253,15 @@ VBint:				; Blank template VERTB interrupt
 
 __FILLRNDBG:
 	MOVEM.L	D0-A6,-(SP)	; SAVE TO STACK
+	MOVE.W	MED_SONG_POS,D1
+	MULU.W	#bpl*2,D1
 	MOVE.L	KONEYBG,A4	; SOURCE DATA
-	ADD.L	#100*bpl,A4
+	ADD.L	D1,A4
 	CLR	D4
 	MOVE.B	#4-1,D4		; QUANTE LINEE
 	.OUTERLOOP:		; NUOVA RIGA
 	CLR	D6
-	MOVE.B	#bpl/2-1,D6		; RESET D6
+	MOVE.B	#bpl/2-1,D6	; RESET D6
 	.INNERLOOP:
 	BSR.S	_RandomByte
 	MOVE.B	D5,(A4)+
@@ -292,7 +294,7 @@ ViewBuffer:	DC.L SCREEN1
 ;*******************************************************************************
 	SECTION	"ChipData",DATA_C	;declared data that must be in chipmem
 ;*******************************************************************************
-;MED_MODULE:	INCBIN "med/KETAMUSkOLAR_2020FIX.med"		;<<<<< MODULE NAME HERE!
+;MED_MODULE:	INCBIN "med/KETAMUSkOLAR_2020FIX.med"	;<<<<< MODULE NAME HERE!
 MED_MODULE:	INCBIN "med/mammagamma.med"		;<<<<< MODULE NAME HERE!
 	;IFNE	SPLIT_RELOCS
 _chipzero:	DC.L 0

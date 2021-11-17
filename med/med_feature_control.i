@@ -44,9 +44,10 @@ EASY		EQU	1
 ;============================================================================
 
 ; #### KONEY ####
+STOP_AT_END	EQU	1	; Dont loop at end of sequence
 INSTR_TRACKING	EQU	1	; Tracks instruments#, notes etc TBD
-START_POS	EQU	0	; After SEQ 0 jump to #
-SPLIT_RELOCS	EQU	0	; If 1 samples will be expected to be separated from song data, 
+START_POS	EQU	1	; After SEQ 0 jump to MED_START_POS
+SPLIT_RELOCS	EQU	0	; If 1 samples will be expected to be separated from song data,
 				; at label "MED_SAMPLES:" so all the rest can be in fast ram
 ; #### KONEY ####
 
