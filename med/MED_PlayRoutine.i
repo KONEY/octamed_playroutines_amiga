@@ -1084,6 +1084,7 @@ plr_advlinenum:	move.w	mmd_pline(a2),d1		;get current line #
 		addq.w	#1,d1			;advance line number
 		MOVE.W	D1,MED_BLOCK_LINE		;INCREASE LINE POS | KONEY
 		ADDI.W	#1,MED_STEPSEQ_POS	;INCREASE STEPSEQ | KONEY
+		MOVE.W	POS_PROMISE,MED_SONG_POS	;USE TEMP POSITION | KONEY
 plr_linenumset:	cmp.w	numlines-DB(a6),d1 	;advance block?
 		bhi.s	plr_chgblock		;yes.
 		tst.b	nextblock-DB(a6)		;command F00/1Dxx?
@@ -1150,7 +1151,8 @@ plr_notagain_b:	move.b	d0,mmd_pseqnum+1(a2)	;remember new playseq-#
 		BLO.W	plr_chgblock		;GO INCREMENT AGAIN | KONEY
 		MOVE.W	#0,MED_START_POS		;SAVE START POSITION | KONEY
 	ENDC
-		MOVE.W	D0,MED_SONG_POS		;SAVE POSITION | KONEY
+		MOVE.W	D0,POS_PROMISE		;SAVE POSITION TEMP | KONEY
+
 		lea	msng_playseq(a4),a0	;offset of sequence table
 		move.b	0(a0,d0.w),d0		;get number of the block
 ; ********* BELOW CODE FOR BOTH FORMATS *********************************
@@ -1160,7 +1162,6 @@ plr_changeblk:
 		blt.s	plr_nolstblk		;no..
 		moveq	#0,d0			;play block 0
 	;IFNE	STOP_AT_END
-		;MOVE.W	$DFF006,$DFF180		; show rastertime left down to $12c
 		;BRA.W	_RemPlayer		;STOP MUSIC | KONEY
 	;ENDC
 	ENDC
@@ -3223,6 +3224,7 @@ MED_TRK_1_COUNT:	DC.W $4000
 MED_TRK_2_COUNT:	DC.W $4000
 MED_TRK_3_COUNT:	DC.W $4000
 	ENDC
+POS_PROMISE:	DC.W 0		; FIX?
 MED_SONG_POS:	DC.W 0		; Well the position...
 MED_BLOCK_LINE:	DC.W 0		; Line of block
 MED_STEPSEQ_POS:	DC.W -1		; Pos of the step sequencer 0-15 | FIX for start=1
