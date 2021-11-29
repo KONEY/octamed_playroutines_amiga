@@ -918,14 +918,6 @@ _IntHandler:	movem.l	d2-d7/a2-a6,-(sp)
 	IFEQ	CIAB|VBLANK
 		lea	DB,a6			;don't expect a1 to contain DB address
 	ENDC
-	;IFNE	INSTR_TRACKING
-		;MOVE.W	#$0FFF,$DFF180		; show rastertime left down to $12c
-		;CLR.W	$100			; DEBUG | w 0 100 2
-		;addq.w	#1,MED_TRK_0_COUNT-DB(a6)	;inc elapsed #calls since last
-		;addq.w	#1,MED_TRK_1_COUNT-DB(a6)
-		;addq.w	#1,MED_TRK_2_COUNT-DB(a6)
-		;addq.w	#1,MED_TRK_3_COUNT-DB(a6)
-	;ENDC
 		tst.b	bpmcounter-DB(a6)
 		bmi.s	plr_nobpm
 		subq.b	#1,bpmcounter-DB(a6)
@@ -1101,7 +1093,7 @@ plr_chgblock:	tst.b	nxtnoclrln-DB(a6)
 		bne.s	plr_noclrln
 		moveq	#0,d1			;clear line number
 		MOVE.W	#0,MED_BLOCK_LINE		;RESET LINE POS | KONEY
-		MOVE.W	#0,MED_STEPSEQ_POS	;RESET STEPSEQ | KONEY
+		;MOVE.W	#0,MED_STEPSEQ_POS	;RESET STEPSEQ | KONEY
 plr_noclrln:	tst.w	mmd_pstate(a2)		;play block or play song
 		bpl.w	plr_nonewseq		;play block only...
 		cmp.b	#'2',3(a2)		;MMD2?
@@ -3233,7 +3225,7 @@ MED_TRK_3_COUNT:	DC.W $4000
 	ENDC
 MED_SONG_POS:	DC.W 0		; Well the position...
 MED_BLOCK_LINE:	DC.W 0		; Line of block
-MED_STEPSEQ_POS:	DC.W 0		; Pos of the step sequencer 0-15
+MED_STEPSEQ_POS:	DC.W -1		; Pos of the step sequencer 0-15 | FIX for start=1
 MED_START_POS:	DC.W 0		; starts at...
 
 ; Fields in struct InstrExt (easier to access this way rather than

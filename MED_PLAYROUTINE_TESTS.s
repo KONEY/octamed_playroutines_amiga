@@ -33,10 +33,11 @@ Demo:	;a4=VBR, a6=Custom Registers Base addr
 	bsr.w	PokePtrs
 
 	; #### CPU INTENSIVE TASKS BEFORE STARTING MUSIC
+	BSR.W	__POINT_SPRITES		; #### Point sprites
 	; #### CPU INTENSIVE TASKS BEFORE STARTING MUSIC
 
 	; in photon's wrapper comment:;move.w d2,$9a(a6) ;INTENA
-	MOVE.W	#2,MED_START_POS	 ; skip to pos# after first block
+	;MOVE.W	#2,MED_START_POS	 ; skip to pos# after first block
 	JSR	_startmusic
 	MOVE.L	#Copper,COP1LC
 ;********************  main loop  ********************
@@ -58,13 +59,9 @@ MainLoop:
 	;bsr.w	ClearScreen
 	;bsr.w	WaitBlitter
 	MOVE.L	KONEYBG,DrawBuffer
-
 	BSR.W	__FILLRNDBG	; SOME DUMMY OPERATION...
+	BSR.W	__SET_SEQUENCER_LEDS
 	; do stuff here :)
-	MOVE.W	MED_STEPSEQ_POS,D0
-	ANDI.W	#15,D0
-	MOVE.W	D0,MED_STEPSEQ_POS
-	MOVE.W	MED_SONG_POS,D0
 
 	;*--- main loop end ---*
 	;BTST	#6,$BFE001
@@ -269,13 +266,73 @@ __FILLRNDBG:
 	DBRA	D4,.OUTERLOOP
 	MOVEM.L	(SP)+,D0-A6	; FETCH FROM STACK
 	RTS
-
 _RandomWord:	bsr	_RandomByte
 		rol.w	#8,d5
 _RandomByte:	move.b	$dff007,d5	;$dff00a $dff00b for mouse pos
 		move.b	$bfd800,d3
 		eor.b	d3,d5
 		rts
+
+__POINT_SPRITES:			; #### Point LOGO sprites
+	LEA	Copper\.SpritePointers,A1	; Puntatori in copperlist
+
+	MOVE.L	#0,D0	; sprite 0
+	MOVE.W	D0,6(A1)
+	SWAP	D0
+	MOVE.W	D0,2(A1)
+
+	ADDQ.W	#8,A1
+	MOVE.L	#0,D0	; sprite 1
+	MOVE.W	D0,6(A1)
+	SWAP	D0
+	MOVE.W	D0,2(A1)
+
+	ADDQ.W	#8,A1
+	MOVE.L	#LED_OFF,D0	; sprite 2
+	MOVE.W	D0,6(A1)
+	SWAP	D0
+	MOVE.W	D0,2(A1)
+
+	ADDQ.W	#8,A1
+	MOVE.L	#LED_ON,D0	; sprite 3
+	MOVE.W	D0,6(A1)
+	SWAP	D0
+	MOVE.W	D0,2(A1)
+
+	ADDQ.W	#8,A1
+	MOVE.L	#0,D0	; sprite 4
+	MOVE.W	D0,6(A1)
+	SWAP	D0
+	MOVE.W	D0,2(A1)
+
+	ADDQ.W	#8,A1
+	MOVE.L	#0,D0		; sprite 5
+	MOVE.W	D0,6(A1)
+	SWAP	D0
+	MOVE.W	D0,2(A1)
+
+	ADDQ.W	#8,A1
+	MOVE.L	#0,D0		; sprite 6
+	MOVE.W	D0,6(A1)
+	SWAP	D0
+	MOVE.W	D0,2(A1)
+
+	ADDQ.W	#8,A1
+	MOVE.L	#0,D0		; sprite 7
+	MOVE.W	D0,6(A1)
+	SWAP	D0
+	MOVE.W	D0,2(A1)
+	RTS
+
+__SET_SEQUENCER_LEDS:
+	MOVE.W	MED_STEPSEQ_POS,D0	; UPDATE STEPSEQUENCER
+	ANDI.W	#$F,D0			; POSITION (0-15 = 16 LEDS)
+	MOVE.W	D0,MED_STEPSEQ_POS
+	LEA	SEQ_POS_ON,A0
+	MOVE.B	(A0,D0.W),LED_ON\.HPOS
+	LEA	SEQ_POS_OFF,A0
+	MOVE.B	(A0,D0.W),LED_OFF\.HPOS
+	RTS
 
 ;********** Fastmem Data **********
 LMBUTTON_STATUS:	DC.W 0
@@ -284,6 +341,9 @@ AUDIOCHLEV_1:	DC.W 0
 AUDIOCHLEV_2:	DC.W 0
 AUDIOCHLEV_3:	DC.W 0
 FRAMESINDEX:	DC.W 4
+
+SEQ_POS_ON:	DC.B $00,$61,$69,$71,$00,$81,$89,$91,$00,$A1,$A9,$B1,$00,$C1,$C9,$D1
+SEQ_POS_OFF:	DC.B $59,$00,$00,$00,$79,$00,$00,$00,$99,$00,$00,$00,$B9,$00,$00,$00
 
 KONEYBG:		DC.L BG1		; INIT BG
 DrawBuffer:	DC.L SCREEN2	; pointers to buffers to be swapped
@@ -294,7 +354,7 @@ ViewBuffer:	DC.L SCREEN1
 ;*******************************************************************************
 	SECTION	"ChipData",DATA_C	;declared data that must be in chipmem
 ;*******************************************************************************
-;MED_MODULE:	INCBIN "med/KETAMUSkOLAR_2020FIX.med"	;<<<<< MODULE NAME HERE!
+
 MED_MODULE:	INCBIN "med/mammagamma.med"		;<<<<< MODULE NAME HERE!
 	;IFNE	SPLIT_RELOCS
 _chipzero:	DC.L 0
@@ -303,6 +363,28 @@ _chipzero:	DC.L 0
 
 BG1:		INCBIN "GFX_MEDPLAYER.raw"
 		DS.B bpl*h	
+
+LED_ON:
+	.VPOS:
+	DC.B $EF
+	.HPOS:
+	DC.B $47
+	DC.B $F2
+	.CTRL:
+	DC.B $00
+	DC.W $E000,$E000,$E000,$E000,$E000,$E000
+	DC.L 0
+
+LED_OFF:	
+	.VPOS:
+	DC.B $EF
+	.HPOS:
+	DC.B $47
+	DC.B $F2
+	.CTRL:
+	DC.B $00
+	DC.W $E000,$0000,$E000,$0000,$E000,$0000
+	DC.L 0
 
 Copper:
 	DC.W $1FC,0	;Slow fetch mode, remove if AGA demo.
@@ -333,9 +415,9 @@ Copper:
 
 	.Palette:			;Some kind of palette (3 bpls=8 colors)
 	DC.W $0180,$0111,$0182,$0FFF,$0184,$0111,$0186,$0122
-	DC.W $0188,$0333,$018A,$0444,$018C,$0555,$018E,$0455
-	DC.W $0190,$0666,$0192,$0888,$0194,$0999,$0196,$0AAA
-	DC.W $0198,$09AA,$019A,$0FFF,$019C,$0FFF,$019E,$0FFF
+	DC.W $0188,$0F00,$018A,$0F00,$018C,$0F00,$018E,$0F00
+	DC.W $0190,$0F00,$0192,$0F00,$0194,$0F00,$0196,$0F00
+	DC.W $0198,$0F00,$019A,$0F00,$019C,$0F00,$019E,$0F00
 
 	.SpritePointers:
 	DC.W $120,0,$122,0	; 0
