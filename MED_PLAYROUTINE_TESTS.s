@@ -60,7 +60,6 @@ MainLoop:
 	;bsr.w	WaitBlitter
 	MOVE.L	KONEYBG,DrawBuffer
 	BSR.W	__FILLRNDBG	; SOME DUMMY OPERATION...
-	BSR.W	__SET_SEQUENCER_LEDS
 	; do stuff here :)
 
 	;*--- main loop end ---*
@@ -68,6 +67,13 @@ MainLoop:
 	;BNE.S	.DontShowRasterTime
 	;MOVE.W	#$0F0,$180(A6)	; show rastertime left down to $12c
 	;.DontShowRasterTime:
+
+	MOVE.W	MED_MODULE+mmd_pline,MED_BLOCK_LINE
+	MOVE.W	MED_MODULE+mmd_pseqnum,MED_SONG_POS
+
+	MOVE.W	MED_STEPSEQ_POS,D0	; UPDATE STEPSEQUENCER
+	ANDI.W	#$F,D0			; POSITION (0-15 = 16 LEDS)
+	MOVE.W	D0,MED_STEPSEQ_POS
 
 	IFNE	INSTR_TRACKING
 	LEA	MED_TRK_0_COUNT(PC),A0
@@ -192,8 +198,18 @@ MainLoop:
 	MOVE.W	AUDIOCHLEV_0,$DFF180
 	BRA.S	.skip
 	.noNote:
-	
 	ENDC
+
+	BSR.W	__SET_SEQUENCER_LEDS
+
+	;MOVE.W	MED_SONG_POS,D0
+	;CMP.W	#2,D0
+	;BNE.S	.notZero
+	;MOVE.L	AUDIOCHLEV_0,D0
+	;MOVE.L	AUDIOCHLEV_2,D1
+				;move.w	mmd_pline(a2),d1
+	;CLR.W	$100		; DEBUG | w 0 100 2
+	;.notZero:
 
 	; # CODE FOR BUTTON PRESS ##
 	BTST	#6,$BFE001
@@ -250,10 +266,10 @@ VBint:				; Blank template VERTB interrupt
 
 __FILLRNDBG:
 	MOVEM.L	D0-A6,-(SP)	; SAVE TO STACK
-	MOVE.W	MED_SONG_POS,D1
-	MULU.W	#bpl*2,D1
+	MOVE.W	MED_SONG_POS,D2
+	MULU.W	#bpl*2,D2
 	MOVE.L	KONEYBG,A4	; SOURCE DATA
-	ADD.L	D1,A4
+	ADD.L	D2,A4
 	CLR	D4
 	MOVE.B	#4-1,D4		; QUANTE LINEE
 	.OUTERLOOP:		; NUOVA RIGA
@@ -326,8 +342,6 @@ __POINT_SPRITES:			; #### Point LOGO sprites
 
 __SET_SEQUENCER_LEDS:
 	MOVE.W	MED_STEPSEQ_POS,D0	; UPDATE STEPSEQUENCER
-	ANDI.W	#$F,D0			; POSITION (0-15 = 16 LEDS)
-	MOVE.W	D0,MED_STEPSEQ_POS
 	LEA	SEQ_POS_ON,A0
 	MOVE.B	(A0,D0.W),LED_ON\.HPOS
 	LEA	SEQ_POS_OFF,A0
@@ -336,6 +350,8 @@ __SET_SEQUENCER_LEDS:
 
 ;********** Fastmem Data **********
 LMBUTTON_STATUS:	DC.W 0
+MED_SONG_POS:	DC.W 0		; Well the position...
+MED_BLOCK_LINE:	DC.W 0		; Line of block
 AUDIOCHLEV_0:	DC.W 0
 AUDIOCHLEV_1:	DC.W 0
 AUDIOCHLEV_2:	DC.W 0
@@ -355,7 +371,7 @@ ViewBuffer:	DC.L SCREEN1
 	SECTION	"ChipData",DATA_C	;declared data that must be in chipmem
 ;*******************************************************************************
 
-MED_MODULE:	INCBIN "med/mammagamma.med"		;<<<<< MODULE NAME HERE!
+MED_MODULE:	INCBIN "med/mammagamma.med"	;<<<<< MODULE NAME HERE!
 	;IFNE	SPLIT_RELOCS
 _chipzero:	DC.L 0
 	;ENDC

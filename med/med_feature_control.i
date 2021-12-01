@@ -6,7 +6,7 @@ SYNTH		EQU	0	;1 = include synth-sound handler
 CHECK		EQU	1	;1 = do range checkings (track, sample in mem etc.)
 RELVOL		EQU	0	;1 = include relative volume handling code
 IFFMOCT		EQU	0	;1 = play IFF multi-octave samples/ExtSamples correctly
-HOLD		EQU	0	;1 = handle hold/decay
+HOLD		EQU	1	;1 = handle hold/decay
 PLAYMMD0 	EQU	0	;1 = play old MMD0 modules
 AURA		EQU	0	;1 = support the Aura sampler
 ;
