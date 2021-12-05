@@ -1047,7 +1047,7 @@ plr_loop2:	movea.l	(a1)+,a5
 		moveq	#0,d3
 		move.b	trk_previnstr(a5),d3		;instr #
 		movea.l	trk_previnstra(a5),a3		;instr data address
-		move.b	trk_inithold(a5),trk_noteoffcnt(a5) ;initialize hold
+		move.b	trk_inithold(a5),trk_noteoffcnt(a5)	;initialize hold
 		bne.s	plr_nohold0			;not 0 -> OK
 		st	trk_noteoffcnt(a5)			;0 -> hold = 0xff (-1)
 ; ---------------- and finally:
@@ -1057,6 +1057,8 @@ plr_loop2_end:	addq.w	#1,d7
 		cmp.w	numtracks-DB(a6),d7
 		blt.s	plr_loop2
 ; -------- THE REST... ---------------------------------------------------
+		MOVE.W	mmd_pseqnum(a2),MED_SONG_POS	;SONG POSITION | KONEY
+		MOVE.W	mmd_pline(a2),MED_BLOCK_LINE	;LINE POSITION | KONEY
 		bsr.s	AdvSngPtr
 nonewnote:	bsr.w	DoFX
 plr_endfx:	bsr	_StartDMA				;turn on DMA
@@ -2967,7 +2969,7 @@ idd_exit:		jsr	-$7e(a6)			;Enable()
 idd_rts:		rts
 
 SerIntHandler:	move.w	#$4000,$9a(a0)		;disable..(Interrupts are enabled anyway)
-		move.w	#1,$9c(a0)			;clear intreq bit
+		move.w	#1,$9c(a0)		;clear intreq bit
 		tst.b	sysx-buffptr(a1)		;sysx??
 		bne.s	sih_sysx
 		move.w	bytesinbuff-buffptr(a1),d0	;bytesinbuff
