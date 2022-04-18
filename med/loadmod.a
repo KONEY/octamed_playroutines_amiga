@@ -1,17 +1,17 @@
 ;	(Octa)MED module load routines, by Teijo Kinnunen
-;	MED V3.00 module support added		22-Jan-1991
+;	MED V3.00 module support added	22-Jan-1991
 ;	upgraded for V3.20 (OctaMED V2.00)	02-Aug-1991
 ;	and for OctaMED Pro V3.00		02-Apr-1992
 ;	(bug fix)				31-May-1992
 ;	OctaMED Pro V5 support (MMD2)		18-May-1993
 ;	OctaMED Pro V6 support (cmd pages)	16-Jan-1995
 ;	2 bug fixes (Thanks to Peter Kunath.)	14-Feb-1995
-;	V7 support				20-Sep-1995
-;	FastMem loading				26-Nov-1995
+;	V7 support			20-Sep-1995
+;	FastMem loading			26-Nov-1995
 ;	MMD3 recognition			04-Dec-1995
 ;	RequiredPlayRoutine			09-Jan-1996
-;	Didn't reloc MMD3s correctly...		17-Jan-1996
-;	FastMemPlayRecommended			29-Jan-1996
+;	Didn't reloc MMD3s correctly...	17-Jan-1996
+;	FastMemPlayRecommended		29-Jan-1996
 ;	Fixed MMD0 multi-module reloc error	25-Apr-1996
 
 ;	$VER: loadmod_a 7.0 (25.4.1996)

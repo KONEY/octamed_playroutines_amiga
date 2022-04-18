@@ -795,28 +795,28 @@ synth_wftbl:	moveq	#0,d0
 		move.w	trk_wfcmd(a5),d0			;get table pos offset
 		move.w	trk_wfchgspd(a5),d1			;CHU/CHD ??
 		beq.s	synth_tstwfwai			;0 = no change
-wytanwet:		add.w	trk_perchg(a5),d1			;add value to current change
+wytanwet:		add.w	trk_perchg(a5),d1		;add value to current change
 		move.w	d1,trk_perchg(a5)			;remember amount of change
-synth_tstwfwai:	tst.b	trk_wfwait(a5)			;WAI ??
+synth_tstwfwai:	tst.b	trk_wfwait(a5)		;WAI ??
 		beq.s	synth_getwfcmd			;not waiting...
 		subq.b	#1,trk_wfwait(a5)			;decr wait counter
 		beq.s	synth_getwfcmd			;waiting finished
 		bra.w	synth_arpeggio			;still sleep...
 synth_incwfc:	addq.b	#1,d0
-synth_getwfcmd:	addq.b	#1,d0				;advance position counter
-		move.b	-9(a0,d0.w),d1			;get command
-		bmi.s	synth_wfcmd			;negative = command
+synth_getwfcmd:	addq.b	#1,d0			;advance position counter
+		move.b	-9(a0,d0.w),d1		;get command
+		bmi.s	synth_wfcmd		;negative = command
 		ext.w	d1
 		add.w	d1,d1
 		add.w	d1,d1
 		movea.l	120(a0,d1.w),a1
-		move.w	(a1)+,ac_len(a3)			;push waveform length
-		move.l	a1,ac_ptr(a3)			;and the new pointer
-		bra.w	synth_wfend			;no new commands now...
-synth_wfcmd:	and.w	#$000f,d1				;get the right nibble
-		add.b	d1,d1				;* 2
+		move.w	(a1)+,ac_len(a3)		;push waveform length
+		move.l	a1,ac_ptr(a3)		;and the new pointer
+		bra.w	synth_wfend		;no new commands now...
+synth_wfcmd:	and.w	#$000f,d1			;get the right nibble
+		add.b	d1,d1			;* 2
 		move.w	synth_wfctbl(pc,d1.w),d1
-		jmp	syw(pc,d1.w)			;jump to command
+		jmp	syw(pc,d1.w)		;jump to command
 synth_wfctbl:	dc.w	syw_f0-syw,syw_f1-syw,syw_f2-syw,syw_f3-syw,syw_f4-syw
 		dc.w	syw_f5-syw,syw_f6-syw,syw_f7-syw,synth_wfend-syw
 		dc.w	synth_wfend-syw,syw_fa-syw,syw_ff-syw
@@ -1053,7 +1053,7 @@ plr_loop2:	movea.l	(a1)+,a5
 		bne.s	plr_nohold0			;not 0 -> OK
 		st	trk_noteoffcnt(a5)			;0 -> hold = 0xff (-1)
 ; ---------------- and finally:
-plr_nohold0:	bsr	_PlayNote				;play it
+plr_nohold0:	bsr	_PlayNote			;play it
 		move.l	(sp)+,a1
 plr_loop2_end:	addq.w	#1,d7
 		cmp.w	numtracks-DB(a6),d7
@@ -1212,7 +1212,7 @@ plr_chkhold:	movea.l	(a5)+,a1			;track data
 		and.b	#$3F,d0
 		beq.s	plr_holdend		;don't hold
 		bra.s	plr_hold2
-plr_hold1:		and.b	#$7f,d1		;note??
+plr_hold1:	and.b	#$7f,d1		;note??
 		beq.s	plr_hold2			;no, cont hold..
 		move.b	2(a3),d1
 		subq.b	#3,d1			;is there command 3 (slide)
@@ -1250,6 +1250,12 @@ plr_loop1_1:	movea.l	(a1)+,a5
 		bra.s	doprefx_mmd0maskd
 doprefx_mmd12mask:
 	ENDC
+		BTST	#6,$BFE001		;IF LMB		| KONEY
+		BNE.S	doprefx_mmd0maskd
+		MOVE.W	#$0F,D0			;MOCK A F00 CMD	| KONEY
+		MOVE.B	#0,D4			;TO SKIP TO NEXT	| KONEY
+		BRA.S	DoPreFX			;BLOCK IN SEQ	| KONEY
+
 		and.w	#$1F,d0
 doprefx_mmd0maskd:
 		bsr.s	DoPreFX
@@ -3444,23 +3450,23 @@ OFFS	SET OFFS+4
 
 OFFS	SET 0
 	; the track-data structure definition:
-	DEFBYTE trk_prevnote	;previous note number (0 = none, 1 = C-1..)
-	DEFBYTE trk_previnstr	;previous instrument number
-	DEFBYTE trk_prevvol		;previous volume
-	DEFBYTE trk_prevmidich	;previous MIDI channel
-	DEFBYTE trk_prevmidin	;previous MIDI note
-	DEFBYTE trk_noteoffcnt	;note-off counter (hold)
-	DEFBYTE trk_inithold	;default hold for this instrument
-	DEFBYTE trk_initdecay	;default decay for....
-	DEFBYTE trk_stransp		;instrument transpose
-	DEFBYTE trk_finetune	;finetune
-	DEFWORD trk_soffset		;new sample offset | don't sep this and 2 below!
-	DEFBYTE trk_miscflags	;bit: 7 = cmd 3 exists, 0 = cmd E exists
-	DEFBYTE trk_currnote	;note on CURRENT line (0 = none, 1 = C-1...)
-	DEFBYTE trk_outputdev	;output device
-	DEFBYTE trk_fxtype		;fx type: 0 = norm, 1 = none, -1 = MIDI
-	DEFLONG trk_previnstra	;address of the previous instrument data
-	DEFWORD trk_trackvol
+	DEFBYTE	trk_prevnote	;previou	s note number (0 = none, 1 = C-1..)
+	DEFBYTE	trk_previnstr	;previous instrument number
+	DEFBYTE	trk_prevvol		;previous volume
+	DEFBYTE	trk_prevmidich	;previous MIDI channel
+	DEFBYTE	trk_prevmidin	;previous MIDI note
+	DEFBYTE	trk_noteoffcnt	;note-off counter (hold)
+	DEFBYTE	trk_inithold	;default hold for this instrument
+	DEFBYTE	trk_initdecay	;default decay for....
+	DEFBYTE	trk_stransp		;instrument transpose
+	DEFBYTE	trk_finetune	;finetune
+	DEFWORD	trk_soffset		;new sample offset | don't sep this and 2 below!
+	DEFBYTE	trk_miscflags	;bit: 7 = cmd 3 exists, 0 = cmd E exists
+	DEFBYTE	trk_currnote	;note on CURRENT line (0 = none, 1 = C-1...)
+	DEFBYTE	trk_outputdev	;output device
+	DEFBYTE	trk_fxtype		;fx type: 0 = norm, 1 = none, -1 = MIDI
+	DEFLONG	trk_previnstra	;address of the previous instrument data
+	DEFWORD	trk_trackvol
 	; the following data only on tracks 0 - 3
 	DEFWORD	trk_prevper	;previous period
 	DEFLONG	trk_audioaddr	;hardware audio channel base address

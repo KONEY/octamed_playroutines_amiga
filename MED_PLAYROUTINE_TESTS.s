@@ -212,9 +212,9 @@ MainLoop:
 	;## DEBUG VALUES ##
 
 	; # CODE FOR BUTTON PRESS ##
-	BTST	#6,$BFE001
-	BNE.S	.skip
-	MOVE.W	#$0FF0,$DFF180	; show rastertime left down to $12c
+;	BTST	#6,$BFE001
+;	BNE.S	.skip
+;	MOVE.W	#$0FF0,$DFF180	; show rastertime left down to $12c
 	.skip:
 
 	;BTST	#6,$BFE001
