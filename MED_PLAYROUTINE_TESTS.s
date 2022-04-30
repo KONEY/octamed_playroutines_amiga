@@ -43,7 +43,7 @@ Demo:	;a4=VBR, a6=Custom Registers Base addr
 ;********************  main loop  ********************
 MainLoop:
 	move.w	#$12C,D0		;No buffering, so wait until raster
-	bsr.w	WaitRaster	;is below the Display Window.
+	;bsr.w	WaitRaster	;is below the Display Window.
 	;*--- swap buffers ---*
 	movem.l	DrawBuffer,a2-a3
 	exg	a2,a3
@@ -66,7 +66,7 @@ MainLoop:
 	;BTST	#6,$BFE001
 	;BNE.S	.DontShowRasterTime
 	;MOVE.W	#$0F0,$180(A6)	; show rastertime left down to $12c
-	;.DontShowRasterTime:
+	.DontShowRasterTime:
 
 	;MOVE.W	MED_MODULE+mmd_pline,MED_BLOCK_LINE ; MOVED BACK IN MAIN ROUTINE
 	;MOVE.W	MED_MODULE+mmd_pseqnum,MED_SONG_POS ; MOVED BACK IN MAIN ROUTINE
@@ -195,7 +195,7 @@ MainLoop:
 	MOVE.W	MED_TRK_0_INST,D0	; 1 WORD TO TAKE 2 BYTES FROM CH0
 	CMP.W	#$71E,D0		; CH0 INST 07 NOTE F-3 = SNARE	; 0000011100011110
 	BNE.S	.noNote
-	MOVE.W	AUDIOCHLEV_0,$DFF180
+	MOVE.W	AUDIOCHLEV_0,$DFF182
 	BRA.S	.skip
 	.noNote:
 	ENDC
@@ -229,6 +229,8 @@ MainLoop:
 	;MOVE.W	#0,LMBUTTON_STATUS
 	;.DontResetStatus:
 
+	BSR.S	WaitRasterCopper	; is below the Display Window.
+
 	BTST	#2,$DFF016	; POTINP - RMB pressed?
 	BNE.W	MainLoop		; then loop
 	;*--- exit ---*
@@ -239,6 +241,13 @@ MainLoop:
 	RTS
 ;********** Demo Routines **********
 
+WaitRasterCopper:
+	MOVE.W	#$0223,$DFF180		; show rastertime left down to $12c
+	BTST	#4,INTENAR+1
+	BNE.S	WaitRasterCopper
+	;MOVE.W	#$0000,$DFF180		; show rastertime left down to $12c
+	MOVE.W	#$8010,INTENA
+	RTS
 PokePtrs:				; Generic, poke ptrs into copper list
 	.bpll:	
 	move.l	a0,d2
@@ -513,8 +522,10 @@ Copper:
 	DC.W $0182,$0000
 	DC.W $FD07,$FFFE
 	DC.W $0182,$0AAA
-
 	DC.W $FFDF,$FFFE		; allow VPOS>$ff
+
+	DC.W $3501,$FF00		; ## RASTER END ## #$12C?
+	DC.W $009A,$0010		; CLEAR RASTER BUSY FLAG
 
 	DC.W $FFFF,$FFFE		; magic value to end copperlist
 _Copper:

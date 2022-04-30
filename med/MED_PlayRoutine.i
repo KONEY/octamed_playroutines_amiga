@@ -1250,11 +1250,13 @@ plr_loop1_1:	movea.l	(a1)+,a5
 		bra.s	doprefx_mmd0maskd
 doprefx_mmd12mask:
 	ENDC
+	IFNE	START_POS
 		BTST	#6,$BFE001		;IF LMB		| KONEY
 		BNE.S	doprefx_mmd0maskd
 		MOVE.W	#$0F,D0			;MOCK A F00 CMD	| KONEY
 		MOVE.B	#0,D4			;TO SKIP TO NEXT	| KONEY
 		BRA.S	DoPreFX			;BLOCK IN SEQ	| KONEY
+	ENDC
 
 		and.w	#$1F,d0
 doprefx_mmd0maskd:

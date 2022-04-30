@@ -2,7 +2,7 @@
 ;base reg $dff000
 
 BLTDDAT	= $DFF000	;result of the last word. used for bob collision detection and 
-			;MFM decoding
+		;MFM decoding
 DMACONR	= $DFF002	;bit 14=blitter busy flag
 
 ;blitter operation setup
@@ -24,7 +24,7 @@ BLTDPTL	= $DFF056
 BLTSIZE	= $DFF058
 
 ;ECS/AGA registers
-BLTCON0L = $DFF05A
+BLTCON0L	= $DFF05A
 BLTSIZV	= $DFF05C
 BLTSIZH	= $DFF05E
 
@@ -48,6 +48,7 @@ DMACON	= $DFF096
 
 ;Interrupt enable bits (clear or set bits)
 INTENA	= $DFF09A
+INTENAR	= $DFF01C
 INTREQ	= $DFF09C
 
 VPOSR	= $DFF004
