@@ -16,6 +16,12 @@ https://aminet.net/package/mods/instr/bc-medsounds  - SynthSounds DOC in .txt
 https://docs.google.com/document/d/1l_4wyp5bhGYkN5EHM8PFY6nHXuFM0In--8Uf_R8kh1A/edit?usp=sharing - SynthSounds DOC Google Docs version
 https://github.com/KONEY/lost_octamed_files_amiga - First production using this player.
 
+# Release notes for V1.2 - 30.04.2022
+Got rid of code to handle Aura and MIDI. As a matter of fact, these routines are here for demos development and MIDI
+or Aura are never used. Old code can be found on a separate branch, not maintained.
+Having less code to deal with a refactor became possible, so now everything is divided using sublabels so now
+code isn't a mess anymore.
+
 # Release notes for V1.0
 Fixed a few thing but mostly added support for visualizations. In orded to do that I got inspiration from P61 player
 but added some interesting things like tracking of what instrument number is playing and what note.

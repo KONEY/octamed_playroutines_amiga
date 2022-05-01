@@ -1,14 +1,14 @@
 ;****** Feature control ******
 ;
-MIDI		EQU	0	;1 = include MIDI code
+;MIDI		EQU	0	;1 = include MIDI code
 AUDDEV		EQU	0	;1 = allocate channels using audio.device
-SYNTH		EQU	0	;1 = include synth-sound handler
-CHECK		EQU	1	;1 = do range checkings (track, sample in mem etc.)
+SYNTH		EQU	1	;1 = include synth-sound handler
+CHECK		EQU	0	;1 = do range checkings (track, sample in mem etc.)
 RELVOL		EQU	0	;1 = include relative volume handling code
 IFFMOCT		EQU	0	;1 = play IFF multi-octave samples/ExtSamples correctly
 HOLD		EQU	0	;1 = handle hold/decay
 PLAYMMD0 		EQU	0	;1 = play old MMD0 modules
-AURA		EQU	0	;1 = support the Aura sampler
+;AURA		EQU	0	;1 = support the Aura sampler
 ;
 ; The less features you include, the faster and shorter the play-routine
 ; will be.
@@ -44,7 +44,7 @@ EASY		EQU	1
 ;============================================================================
 
 ; #### KONEY ####
-STOP_AT_END	EQU	1	; Dont loop at end of sequence
+STOP_AT_END	EQU	0	; Dont loop at end of sequence
 INSTR_TRACKING	EQU	1	; Tracks instruments#, notes etc TBD
 START_POS		EQU	0	; After SEQ 0 jump to MED_START_POS
 SPLIT_RELOCS	EQU	0	; If 1 samples will be expected to be separated from song data,
