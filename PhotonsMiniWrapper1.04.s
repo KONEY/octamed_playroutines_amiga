@@ -1,5 +1,4 @@
 ;*** MiniWrapper by Photon ***
-
 Start:	
 	move.l 4.w,a6		;Exec library base address in a6
 	sub.l a4,a4
@@ -27,7 +26,7 @@ Start:
 	lea $dff000,a6
 	bsr.w WaitEOF		;wait out the current frame
 	move.l $1c(a6),-(sp)	;save intena+intreq
-	move.w 2(a6),-(sp)	;and dma
+	move.w 2(a6),-(sp)		;and dma
 	move.l $6c(a4),-(sp)	;and also the VB int vector for sport.
 	bsr.w AllOff		;turn off all interrupts+DMA
 

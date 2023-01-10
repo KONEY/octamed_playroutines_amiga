@@ -498,7 +498,7 @@ hANDleSynthnote:
 		BNE.S	.hSn_nossn
 		ST	trk_synthtype(A5)
 		MOVEA.L	278(A0),A0		;yep, get the waveform pointer
-		BRA.W	_PlayNote\.tlwTST0			;go AND play it
+		BRA.W	_PlayNote\.tlwTST0		;go AND play it
 		.hSn_nossn:
 		MOVE.B	#1,trk_synthtype(A5)
 		LEA	_periodtable+32-DB(A6),A1
@@ -581,7 +581,7 @@ synth_start:
 		.Synth_getvolcmd:
 		ADDQ.B	#1,D0			;advance pointer
 		MOVE.B	21(A0,D0.W),D1		;get commAND
-		BMI.S	.Synth_cmd			;negative = commAND
+		BMI.S	.Synth_cmd		;negative = commAND
 		MOVE.B	D1,trk_synvol(A5)		;set synthvol
 		BRA.W	.Synth_endvol		;end of volume executing
 		.Synth_cmd:
@@ -774,7 +774,7 @@ synth_start:
 	; -------- HANDLE SYNTHSOUND VIBRATO -------------------------------------
 		.Synth_viBRAto:
 		MOVE.W	trk_synvibdep(A5),D1	;get viBRAto depth
-		BEQ.S	.Synth_RTS			;0 => no viBRAto
+		BEQ.S	.Synth_RTS		;0 => no viBRAto
 		MOVE.W	trk_synviboffs(A5),D0	;get offset
 		LSR.W	#4,D0			;/ 16
 		AND.W	#$1f,D0			;sinetable offset (0-31)
@@ -976,7 +976,7 @@ _IntHANDler:	;MOVE.W	#$0F0,$DFF180		; show rastertime left down to $12c
 
 	; AND advance song pointers
 AdvSngPtr:
-		MOVE.L	mmd_pblock(A2),fxplineblk-DB(A6)	;store pline/block for fx
+		MOVE.L	mmd_pblock(A2),fxplineblk-DB(A6) ;store pline/block for fx
 		MOVE.W	nextblockline-DB(A6),D1
 		BEQ.S	.plr_advlinenum
 		CLR.W	nextblockline-DB(A6)
@@ -1129,16 +1129,16 @@ AdvSngPtr:
 		.plr_chkhold:
 		MOVEA.L	(A5)+,A1			;track data
 		TST.B	trk_noteoffcnt(A1)		;hold??
-		BMI.S	plr_holdend		;no.
+		BMI.S	.plr_holdend		;no.
 		MOVE.B	(A3),D1			;get the 1st byte..
 		BNE.S	.plr_holD1
 		MOVE.B	1(A3),D0
 		AND.B	#$3F,D0
-		BEQ.S	plr_holdend		;don't hold
+		BEQ.S	.plr_holdend		;don't hold
 		BRA.S	.plr_holD2
 		.plr_holD1:
 		AND.B	#$7f,D1			;note??
-		BEQ.S	.plr_holD2			;no, cont hold..
+		BEQ.S	.plr_holD2		;no, cont hold..
 		MOVE.B	2(A3),D1
 		SUBQ.B	#3,D1			;is there commAND 3 (slide)
 		BNE.S	.plr_holdend		;no -> end holding
@@ -1251,7 +1251,7 @@ DoPreFX:
 	; ---------------- FF2 (or 1Fxx)
 		.f_1f:
 	IFNE HOLD
-		MOVE.B	trk_inithold(A5),trk_noteoffcnt(A5)	;initialize hold
+		MOVE.B	trk_inithold(A5),trk_noteoffcnt(A5) ;initialize hold
 		BNE.S	.f_1fRTS			;not 0 -> OK
 		ST	trk_noteoffcnt(A5)		;0 -> hold = 0xff (-1)
 	ENDC
@@ -1702,7 +1702,7 @@ HoldAndFade:
 	IFNE SYNTH
 		TST.B	trk_synthtype(A5)		;synth/hybrid??
 		BEQ.S	.plr_nosyndec
-		MOVE.B	trk_decay(A5),trk_volcmd+1(A5)	;set volume commAND pointer
+		MOVE.B	trk_decay(A5),trk_volcmd+1(A5) ;set volume commAND pointer
 		CLR.B	trk_volwait(A5)		;abort WAI
 		BRA.S	.plr_haf_noholdexp
 	ENDC
@@ -2450,7 +2450,7 @@ _PlayModule:
 		MOVE.B	#'0',3(A0)		;change MCNT to MCN0
 		.PM_nomodT:
 		MOVEA.L	mmd_songinfo(A0),A1		;song
-		MOVE.B	msng_tempo2(A1),mmd_counter(A0)	;init counter
+		MOVE.B	msng_tempo2(A1),mmd_counter(A0) ;init counter
 		BTST	#0,msng_flags(A1)
 		BNE.S	.PM_filon
 		BSET	#1,$bfe001
@@ -2977,19 +2977,19 @@ OFFS	SET 0
 	; the track-data structure definition:
 	DEFBYTE	trk_prevnote	;previou	s note number (0 = none, 1 = C-1..)
 	DEFBYTE	trk_previnstr	;previous instrument number
-	DEFBYTE	trk_prevvol		;previous volume
+	DEFBYTE	trk_prevvol	;previous volume
 	DEFBYTE	trk_prevmidich	;previous MIDI channel
 	DEFBYTE	trk_prevmidin	;previous MIDI note
 	DEFBYTE	trk_noteoffcnt	;note-off counter (hold)
 	DEFBYTE	trk_inithold	;default hold for this instrument
 	DEFBYTE	trk_initdecay	;default decay for....
-	DEFBYTE	trk_stranSP		;instrument tranSPose
+	DEFBYTE	trk_stranSP	;instrument tranSPose
 	DEFBYTE	trk_finetune	;finetune
-	DEFWORD	trk_soffset		;new sample offset | don't sep this AND 2 below!
+	DEFWORD	trk_soffset	;new sample offset | don't sep this AND 2 below!
 	DEFBYTE	trk_miscflags	;bit: 7 = cmd 3 exists, 0 = cmd E exists
 	DEFBYTE	trk_currnote	;note on CURRENT line (0 = none, 1 = C-1...)
 	DEFBYTE	trk_outputdev	;output device
-	DEFBYTE	trk_fxtype		;fx type: 0 = norm, 1 = none, -1 = MIDI
+	DEFBYTE	trk_fxtype	;fx type: 0 = norm, 1 = none, -1 = MIDI
 	DEFLONG	trk_previnstra	;ADDress of the previous instrument data
 	DEFWORD	trk_trackvol
 	; the following data only on tracks 0 - 3

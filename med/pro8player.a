@@ -6,7 +6,7 @@
 ; The music player routine for MMD0/MMD1/MMD2 MED/OctaMED
 ; eight channel modules.
 ;
-; Copyright © 1995 Teijo Kinnunen and RBF Software.
+; Copyright ï¿½ 1995 Teijo Kinnunen and RBF Software.
 ;
 ; Written by Teijo Kinnunen.
 ; Comments/questions/bug reports can be sent to:
@@ -1582,7 +1582,7 @@ ST_nodef8tempo  add.b   #9,d0
 	tst.b   _hq-DB(a6)
 	beq.s   ST_nohq
 	move.b  10(a0,d0.w),d0  ;get buffersize / 4
-	add.w   d0,d0       ;->buffersize / 2
+	add.w   d0,d0       ;->buffersize /ï¿½2
 	bra.s   ST_hqcont
 ST_slowhq   move.b  0(a0,d0.w),d0
 	add.w   d0,d0
