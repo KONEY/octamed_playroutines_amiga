@@ -1309,7 +1309,7 @@ DoPreFX:
 		CMP.B	#4,D7
 		BGE.S	.f_0e_RTS
 	ENDC
-		BSET	#0,trk_miscflags(A5)
+		BSET	#0,trk_miscflags(A5)	; THIS IS FOR SYNTHSOUNDS
 		MOVE.B	D4,trk_wfcmd+1(A5)		;set waveform commAND position ptr
 		.f_0e_RTS: rtplay
 	; ---------------- change volume
@@ -2026,6 +2026,10 @@ ChannelFX:
 		TST.W	D0
 		BNE.S	.fx_18RTS
 		BRA	fx_0f\.playfxnote		;retrigger
+	; **************************************** Effect 0E - SYNTHSOUND
+	;	.fx_0e:
+	;	MOVE.W	#$0F0F,$DFF180		; show rastertime left down to $12c
+	;	.fx_0eRTS: RTS
 	; **************************************** Effect 0F ******
 	; see below...
 	; *********************************************************

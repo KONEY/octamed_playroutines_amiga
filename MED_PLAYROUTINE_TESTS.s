@@ -4,7 +4,8 @@
 	SECTION	"Code",CODE
 	INCLUDE	"custom-registers.i"
 	INCLUDE	"PhotonsMiniWrapper1.04.S"
-	INCLUDE	"med/med_feature_control.i"		; MED CFGs
+	INCLUDE	"med/med_feature_control.i"	; MED CFGs
+	INCLUDE	"med/MED_PlayRoutine.i"
 ;********** Constants **********
 w=320		;screen width, height, depth
 h=256
@@ -42,7 +43,7 @@ Demo:	;a4=VBR, a6=Custom Registers Base addr
 	MOVE.L	#Copper,COP1LC
 ;********************  main loop  ********************
 MainLoop:
-	move.w	#$12C,D0		;No buffering, so wait until raster
+	;move.w	#$12C,D0		;No buffering, so wait until raster
 	;bsr.w	WaitRaster	;is below the Display Window.
 	;*--- swap buffers ---*
 	movem.l	DrawBuffer,a2-a3
@@ -242,10 +243,10 @@ MainLoop:
 ;********** Demo Routines **********
 
 WaitRasterCopper:
-	MOVE.W	#$0223,$DFF180		; show rastertime left down to $12c
+	;MOVE.W	#$0223,$DFF180	; show rastertime left down to $12c
 	BTST	#4,INTENAR+1
 	BNE.S	WaitRasterCopper
-	;MOVE.W	#$0000,$DFF180		; show rastertime left down to $12c
+	;MOVE.W	#$0000,$DFF180	; show rastertime left down to $12c
 	MOVE.W	#$8010,INTENA
 	RTS
 PokePtrs:				; Generic, poke ptrs into copper list
@@ -293,7 +294,7 @@ __FILLRNDBG:
 	RTS
 _RandomWord:	bsr	_RandomByte
 		rol.w	#8,d5
-_RandomByte:	move.b	$dff007,d5	;$dff00a $dff00b for mouse pos
+_RandomByte:	move.b	$dff007,d5 ;$dff00a $dff00b for mouse pos
 		move.b	$bfd800,d3
 		eor.b	d3,d5
 		rts
@@ -375,8 +376,6 @@ DrawBuffer:	DC.L SCREEN2	; pointers to buffers to be swapped
 ViewBuffer:	DC.L SCREEN1
 
 ;*******************************************************************************
-	INCLUDE	"med/MED_PlayRoutine.i"
-;*******************************************************************************
 	SECTION	"ChipData",DATA_C	;declared data that must be in chipmem
 ;*******************************************************************************
 
@@ -384,7 +383,7 @@ MED_MODULE:	INCBIN "med/mammagamma.med"	;<<<<< MODULE NAME HERE!
 	;IFNE	SPLIT_RELOCS
 _chipzero:	DC.L 0
 	;ENDC
-		DC.L 0,0	 				; DUMMY
+		DC.L 0,0	 		; DUMMY
 
 BG1:		INCBIN "GFX_MEDPLAYER.raw"
 		DS.B bpl*h	
