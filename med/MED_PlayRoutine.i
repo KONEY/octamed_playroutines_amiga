@@ -985,7 +985,9 @@ AdvSngPtr:
 		.plr_advlinenum:
 		MOVE.W	mmd_pline(A2),D1		;get current line #
 		ADDQ.W	#1,D1			;advance line number
+		IFNE STEP_SEQ
 		ADDI.W	#1,MED_STEPSEQ_POS		;INCREASE STEPSEQ | KONEY
+		ENDC
 		.plr_linenumset:
 		CMP.W	numlines-DB(A6),D1 		;advance block?
 		BHI.S	.plr_chgblock		;yes.
@@ -996,7 +998,9 @@ AdvSngPtr:
 		TST.B	nxtnoCLRln-DB(A6)
 		BNE.S	.plr_noCLRln
 		MOVEQ	#0,D1			;cLEAr line number
+		IFNE STEP_SEQ
 		;MOVE.W	#0,MED_STEPSEQ_POS		;RESET STEPSEQ | KONEY
+		ENDC
 		.plr_noCLRln:
 		TST.W	mmd_pstate(A2)		;play block or play song
 		BPL.W	.plr_nonewseq		;play block only...
@@ -2770,7 +2774,9 @@ MED_TRK_1_COUNT:	DC.W $4000
 MED_TRK_2_COUNT:	DC.W $4000
 MED_TRK_3_COUNT:	DC.W $4000
 	ENDC
+	IFNE STEP_SEQ
 MED_STEPSEQ_POS:	DC.W -1		; Pos of the step sequencer 0-15 | FIX for start=1
+	ENDC
 MED_START_POS:	DC.W 0		; staRTS at...
 
 ; Fields in struct InstrExt (easier to access this way rather than

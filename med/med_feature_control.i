@@ -47,8 +47,8 @@ EASY		EQU	1
 STOP_AT_END	EQU	0	; Dont loop at end of sequence
 INSTR_TRACKING	EQU	1	; Tracks instruments#, notes etc TBD
 START_POS		EQU	0	; After SEQ 0 jump to MED_START_POS
-SPLIT_RELOCS	EQU	0	; If 1 samples will be expected to be separated from song data,
-				; at label "MED_SAMPLES:" so all the rest can be in fast ram
+SPLIT_RELOCS	EQU	0	; Samples are expected separated at label MED_SAMPLES: all the rest can be in fast ram
+STEP_SEQ		EQU	1	; Enable step sequencer
 ; #### KONEY ####
 
 ; The MMD structure offsets

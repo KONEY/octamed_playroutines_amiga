@@ -34,7 +34,9 @@ Demo:	;a4=VBR, a6=Custom Registers Base addr
 	bsr.w	PokePtrs
 
 	; #### CPU INTENSIVE TASKS BEFORE STARTING MUSIC
+	IFNE STEP_SEQ
 	BSR.W	__POINT_SPRITES		; #### Point sprites
+	ENDC
 	; #### CPU INTENSIVE TASKS BEFORE STARTING MUSIC
 
 	; in photon's wrapper comment:;move.w d2,$9a(a6) ;INTENA
@@ -72,11 +74,13 @@ MainLoop:
 	;MOVE.W	MED_MODULE+mmd_pline,MED_BLOCK_LINE ; MOVED BACK IN MAIN ROUTINE
 	;MOVE.W	MED_MODULE+mmd_pseqnum,MED_SONG_POS ; MOVED BACK IN MAIN ROUTINE
 
+	IFNE STEP_SEQ
 	MOVE.W	MED_STEPSEQ_POS,D0	; UPDATE STEPSEQUENCER
 	ANDI.W	#$F,D0		; POSITION (0-15 = 16 LEDS)
 	MOVE.W	D0,MED_STEPSEQ_POS
+	ENDC
 
-	IFNE	INSTR_TRACKING
+	IFNE INSTR_TRACKING
 	LEA	MED_TRK_0_COUNT(PC),A0
 	LEA	Copper\.LEVELWAITS+6,A1
 	LEA	AUDIOCHLEV_0,A2
@@ -201,7 +205,9 @@ MainLoop:
 	.noNote:
 	ENDC
 
+	IFNE STEP_SEQ
 	BSR.W	__SET_SEQUENCER_LEDS
+	ENDC
 
 	;## DEBUG VALUES ##
 	MOVE.L	AUDIOCHLEV_0,D0
@@ -213,9 +219,9 @@ MainLoop:
 	;## DEBUG VALUES ##
 
 	; # CODE FOR BUTTON PRESS ##
-;	BTST	#6,$BFE001
-;	BNE.S	.skip
-;	MOVE.W	#$0FF0,$DFF180	; show rastertime left down to $12c
+	;BTST	#6,$BFE001
+	;BNE.S	.skip
+	;MOVE.W	#$0FF0,$DFF180	; show rastertime left down to $12c
 	.skip:
 
 	;BTST	#6,$BFE001
@@ -299,16 +305,17 @@ _RandomByte:	move.b	$dff007,d5 ;$dff00a $dff00b for mouse pos
 		eor.b	d3,d5
 		rts
 
-__POINT_SPRITES:			; #### Point LOGO sprites
-	LEA	Copper\.SpritePointers,A1	; Puntatori in copperlist
+	IFNE STEP_SEQ
+__POINT_SPRITES:
+	LEA	Copper\.SpritePointers,A1
 
-	MOVE.L	#0,D0	; sprite 0
+	MOVE.L	#0,D0		; sprite 0
 	MOVE.W	D0,6(A1)
 	SWAP	D0
 	MOVE.W	D0,2(A1)
 
 	ADDQ.W	#8,A1
-	MOVE.L	#0,D0	; sprite 1
+	MOVE.L	#0,D0		; sprite 1
 	MOVE.W	D0,6(A1)
 	SWAP	D0
 	MOVE.W	D0,2(A1)
@@ -326,7 +333,7 @@ __POINT_SPRITES:			; #### Point LOGO sprites
 	MOVE.W	D0,2(A1)
 
 	ADDQ.W	#8,A1
-	MOVE.L	#0,D0	; sprite 4
+	MOVE.L	#0,D0		; sprite 4
 	MOVE.W	D0,6(A1)
 	SWAP	D0
 	MOVE.W	D0,2(A1)
@@ -349,7 +356,6 @@ __POINT_SPRITES:			; #### Point LOGO sprites
 	SWAP	D0
 	MOVE.W	D0,2(A1)
 	RTS
-
 __SET_SEQUENCER_LEDS:
 	MOVE.W	MED_STEPSEQ_POS,D0	; UPDATE STEPSEQUENCER
 	LEA	SEQ_POS_ON,A0
@@ -357,6 +363,7 @@ __SET_SEQUENCER_LEDS:
 	LEA	SEQ_POS_OFF,A0
 	MOVE.B	(A0,D0.W),LED_OFF\.HPOS
 	RTS
+	ENDC
 
 ;********** Fastmem Data **********
 LMBUTTON_STATUS:	DC.W 0
@@ -388,7 +395,8 @@ _chipzero:	DC.L 0
 BG1:		INCBIN "GFX_MEDPLAYER.raw"
 		DS.B bpl*h	
 
-LED_ON:
+	IFNE STEP_SEQ
+LED_ON:	
 	.VPOS:
 	DC.B $EF
 	.HPOS:
@@ -398,7 +406,6 @@ LED_ON:
 	DC.B $00
 	DC.W $E000,$E000,$E000,$E000,$E000,$E000
 	DC.L 0
-
 LED_OFF:	
 	.VPOS:
 	DC.B $EF
@@ -409,6 +416,7 @@ LED_OFF:
 	DC.B $00
 	DC.W $E000,$0000,$E000,$0000,$E000,$0000
 	DC.L 0
+	ENDC
 
 Copper:
 	DC.W $1FC,0	;Slow fetch mode, remove if AGA demo.
