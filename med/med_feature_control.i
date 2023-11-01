@@ -1,23 +1,26 @@
 ;****** Feature control ******
-;
-;MIDI		EQU	0	;1 = include MIDI code
+; The less features you include, the faster and shorter the play-routine  will be.
+
 AUDDEV		EQU	0	;1 = allocate channels using audio.device
-SYNTH		EQU	1	;1 = include synth-sound handler
+SYNTH		EQU	0	;1 = include synth-sound handler
 CHECK		EQU	0	;1 = do range checkings (track, sample in mem etc.)
 RELVOL		EQU	0	;1 = include relative volume handling code
 IFFMOCT		EQU	0	;1 = play IFF multi-octave samples/ExtSamples correctly
 HOLD		EQU	0	;1 = handle hold/decay
 PLAYMMD0 		EQU	0	;1 = play old MMD0 modules
-;AURA		EQU	0	;1 = support the Aura sampler
-;
-; The less features you include, the faster and shorter the play-routine
-; will be.
-;
-; NOTE: Using the Aura will cause Enforcer hits (LONG-READ/WRITE at addr $70).
-; This is normal, and can't be avoided.
+
+; #### KONEY ####
+STOP_AT_END	EQU	0	; Dont loop at end of sequence | TO VERIFY
+START_POS		EQU	0	; After SEQ 0 jump to value in MED_START_POS
+SKIP_TO_NEXT	EQU	1	; LMB to skip to next block. Just an example
+STEP_SEQ		EQU	1	; Enable step sequencer in MED_STEPSEQ_POS
+SONG_POS_TRACKING	EQU	1	; Keep track of song position in MED_SONG_POS
+BLOCK_LINE_TRACKING	EQU	1	; Keep track of block line in MED_BLOCK_LINE
+INSTR_TRACKING	EQU	1	; Tracks instruments#, notes and levels for each track
+SPLIT_RELOCS	EQU	0	; Samples are expected at label MED_SAMPLES so all the rest can be in fast ram
+; #### KONEY ####
 
 ;****** Timing control ******
-;
 VBLANK		EQU	0	;1 = use VBlank interrupt (when absolutely necessary)
 CIAB		EQU	1	;1 = use CIA timers (default)
 ;
@@ -33,34 +36,18 @@ CIAB		EQU	1	;1 = use CIA timers (default)
 ;flag to 1. This requires an assembler with INCBIN (or equivalent) directive.
 ;You have to insert the module name to the INCBIN statement (located near the
 ;end of this file, on line 2052).
-
 EASY		EQU	1
-
 ;Call _startmusic to play the music, and _endmusic to stop it (before
 ;exiting). Note: don't call _startmusic twice!! This would cause the module
 ;to be relocated twice (= Guru). If you need to stop and continue playing,
 ;don't use the EASY routines, use PlayModule/StopPlayer... instead.
-
 ;============================================================================
-
-; #### KONEY ####
-STOP_AT_END	EQU	0	; Dont loop at end of sequence | TO VERIFY
-START_POS		EQU	0	; After SEQ 0 jump to value in MED_START_POS
-STEP_SEQ		EQU	1	; Enable step sequencer in MED_STEPSEQ_POS
-SONG_POS_TRACKING	EQU	1	; Keep track of song position in MED_SONG_POS
-BLOCK_LINE_TRACKING	EQU	1	; Keep track of block line in MED_BLOCK_LINE
-INSTR_TRACKING	EQU	1	; Tracks instruments#, notes and levels for each track
-SPLIT_RELOCS	EQU	0	; Samples are expected at label MED_SAMPLES so all the rest can be in fast ram
-; #### KONEY ####
-
 ; The MMD structure offsets
 mmd_id		EQU	0
 mmd_modlen	EQU	4
 mmd_songinfo	EQU	8
-; these two for MMD2s only!
-mmd_psecnum	EQU	12
-mmd_pseq 		EQU	14
-;
+mmd_psecnum	EQU	12	; these two for MMD2s only!
+mmd_pseq 		EQU	14	; these two for MMD2s only!
 mmd_blockarr	EQU	16
 mmd_smplarr	EQU	24
 mmd_expdata	EQU	32

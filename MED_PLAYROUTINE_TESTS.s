@@ -69,15 +69,12 @@ MainLoop:
 	;BTST	#6,$BFE001
 	;BNE.S	.DontShowRasterTime
 	;MOVE.W	#$0F0,$180(A6)	; show rastertime left down to $12c
-	.DontShowRasterTime:
+	;.DontShowRasterTime:
 
-	;MOVE.W	MED_MODULE+mmd_pline,MED_BLOCK_LINE ; MOVED BACK IN MAIN ROUTINE
-	;MOVE.W	MED_MODULE+mmd_pseqnum,MED_SONG_POS ; MOVED BACK IN MAIN ROUTINE
-
-	IFNE STEP_SEQ
-	MOVE.W	MED_STEPSEQ_POS,D0	; UPDATE STEPSEQUENCER
-	ANDI.W	#$F,D0		; POSITION (0-15 = 16 LEDS)
-	MOVE.W	D0,MED_STEPSEQ_POS
+	IFNE STEP_SEQ		; MOVED INSIDE PLAYROUTINE
+	;MOVE.W	MED_STEPSEQ_POS,D0	; UPDATE STEPSEQUENCER
+	;ANDI.W	#$F,D0		; POSITION (0-15 = 16 LEDS)
+	;MOVE.W	D0,MED_STEPSEQ_POS
 	ENDC
 
 	IFNE INSTR_TRACKING
@@ -200,7 +197,7 @@ MainLoop:
 	MOVE.W	MED_TRK_0_INST,D0	; 1 WORD TO TAKE 2 BYTES FROM CH0
 	CMP.W	#$71E,D0		; CH0 INST 07 NOTE F-3 = SNARE	; 0000011100011110
 	BNE.S	.noNote
-	MOVE.W	AUDIOCHLEV_0,$DFF182
+	MOVE.W	AUDIOCHLEV_0,$DFF1AE
 	BRA.S	.skip
 	.noNote:
 	ENDC
@@ -390,35 +387,35 @@ ViewBuffer:	DC.L SCREEN1
 	SECTION	"ChipData",DATA_C	;declared data that must be in chipmem
 ;*******************************************************************************
 
-MED_MODULE:	INCBIN "med/SYNTECHNO.med"	;<<<<< MODULE NAME HERE!
+MED_MODULE:	INCBIN "med/mammagamma.med"	;<<<<< MODULE NAME HERE!
 	;IFNE	SPLIT_RELOCS
 _chipzero:	DC.L 0
 	;ENDC
 		DC.L 0,0	 		; DUMMY
 
-BG1:		INCBIN "GFX_MEDPLAYER.raw"
+BG1:		INCBIN "GFX_MEDPLAYER2.raw"
 		DS.B bpl*h	
 
 	IFNE STEP_SEQ
 LED_ON:	
 	.VPOS:
-	DC.B $EF
+	DC.B $9B
 	.HPOS:
 	DC.B $47
-	DC.B $F2
+	DC.B $9F
 	.CTRL:
 	DC.B $00
-	DC.W $E000,$E000,$E000,$E000,$E000,$E000
+	DC.W $FF00,$FF00,$FF00,$FF00,$FF00,$FF00
 	DC.L 0
 LED_OFF:	
 	.VPOS:
-	DC.B $EF
+	DC.B $9B
 	.HPOS:
 	DC.B $47
-	DC.B $F2
+	DC.B $9F
 	.CTRL:
 	DC.B $00
-	DC.W $E000,$0000,$E000,$0000,$E000,$0000
+	DC.W $FF00,$FF00,$FF00,$FF00,$FF00,$FF00
 	DC.L 0
 	ENDC
 
@@ -454,6 +451,8 @@ Copper:
 	DC.W $0188,$0F00,$018A,$0F00,$018C,$0F00,$018E,$0F00
 	DC.W $0190,$0F00,$0192,$0F00,$0194,$0F00,$0196,$0F00
 	DC.W $0198,$0F00,$019A,$0F00,$019C,$0F00,$019E,$0F00
+	DC.W $01A0,$0555,$01A2,$0444,$01A4,$0FF0,$01A6,$0EEF
+	DC.W $01A8,$0BBC,$01AA,$099A,$01AC,$0F0F,$01AE,$0F00
 
 	.SpritePointers:
 	DC.W $120,0,$122,0	; 0
@@ -466,9 +465,16 @@ Copper:
 	DC.W $13C,0,$13E,0	; 7
 
 	.NOTEINSTRWAIT:
-	DC.W $A207,$FFFE
-	DC.W $0182,$0AAA
-	DC.W $A407,$FFFE
+	;DC.W $A207,$FFFE
+	;DC.W $0182,$0AAA
+	;DC.W $A407,$FFFE
+	;DC.W $0182,$0FFF
+
+	.STEPSEQWAITS:
+	DC.W $9A07,$FFFE
+	DC.W $0182,$0000
+
+	DC.W $9F07,$FFFE
 	DC.W $0182,$0FFF
 
 	.LEVELWAITS:
@@ -532,14 +538,14 @@ Copper:
 	DC.W $FB07,$FFFE
 	DC.W $0182,$0000
 	DC.W $FD07,$FFFE
-	DC.W $0182,$0AAA
+	DC.W $0182,$0FFF
+
 	DC.W $FFDF,$FFFE		; allow VPOS>$ff
 
 	DC.W $3501,$FF00		; ## RASTER END ## #$12C?
 	DC.W $009A,$0010		; CLEAR RASTER BUSY FLAG
 
 	DC.W $FFFF,$FFFE		; magic value to end copperlist
-_Copper:
 
 ;*******************************************************************************
 	SECTION "ChipBuffers",BSS_C	;BSS doesn't count toward exe size

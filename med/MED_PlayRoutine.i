@@ -19,13 +19,11 @@
 ; See OctaMED docs for conditions about using these routines.
 ; Comments/questions about distribution AND usage conditions
 ; should be directed to RBF Software. (Email: rbfsoft@cix.compulink.co.uk)
-;
 ;============================================================================
 ; REFACTOR, DEBUG, EXTENDED FEATURES BY KONEY | koney.org | github.com/KONEY
 ; KONEY Version 1.0 | 30.10.2021
 ; KONEY Version 1.2 | 30.04.2022 | NO MORE AURA/MIDI CODE | BIG REFACTOR
 ;============================================================================
-
 	;SECTION	"Code",CODE
 	IFNE EASY
 		XDEF	_startmusic,_endmusic
@@ -733,26 +731,26 @@ synth_start:
 		ADDQ.B	#1,trk_synthvibSPd+1(A5)
 		BRA.W	.Synth_incwfc
 		.Syw_f2:
-		MOVEQ	#0,D1			;set slide down
+		MOVEQ	#0,D1				;set slide down
 		MOVE.B	-8(A0,D0.W),D1
 		.Synth_setsld:
 		MOVE.W	D1,trk_wfchgSPd(A5)
 		BRA.W	.Synth_incwfc
 		.Syw_f3:
-		MOVE.B	-8(A0,D0.W),D1		;set slide up
+		MOVE.B	-8(A0,D0.W),D1			;set slide up
 		NEG.B	D1
 		EXT.W	D1
 		BRA.S	.Synth_setsld
 		.Syw_f6:
-		CLR.W	trk_perchg(A5)		;reset period
+		CLR.W	trk_perchg(A5)			;reset period
 		MOVE.W	trk_prevper(A5),D5
 		BRA.W	.Synth_getwfcmd
 		.Syw_fa:
-		MOVE.B	-8(A0,D0.W),trk_volcmd+1(A5)	;JVS (jump volume sequence)
+		MOVE.B	-8(A0,D0.W),trk_volcmd+1(A5)		;JVS (jump volume sequence)
 		CLR.B	trk_volwait(A5)
 		BRA.W	.Synth_incwfc
 		.Syw_ff:
-		SUBQ.B	#1,D0			;pointer = END - 1
+		SUBQ.B	#1,D0				;pointer = END - 1
 		.Synth_wfend:
 		MOVE.W	D0,trk_wfcmd(A5)
 	; -------- HANDLE SYNTHSOUND ARPEGGIO ------------------------------------
@@ -990,7 +988,10 @@ AdvSngPtr:
 		MOVE.W	mmd_pline(A2),D1		;get current line #
 		ADDQ.W	#1,D1			;advance line number
 		IFNE STEP_SEQ
-		ADDI.W	#1,MED_STEPSEQ_POS		;INCREASE STEPSEQ | KONEY
+		MOVE.W	MED_STEPSEQ_POS,D0		; UPDATE STEPSEQUENCER
+		ADDQ.W	#1,D0			; INCREASE STEPSEQ | KONEY
+		ANDI.W	#$F,D0			; POSITION (0-15 = 16 LEDS)
+		MOVE.W	D0,MED_STEPSEQ_POS		; QUICKER TO DO HERE
 		ENDC
 		.plr_linenumset:
 		CMP.W	numlines-DB(A6),D1 		;advance block?
@@ -1002,9 +1003,6 @@ AdvSngPtr:
 		TST.B	nxtnoCLRln-DB(A6)
 		BNE.S	.plr_noCLRln
 		MOVEQ	#0,D1			;cLEAr line number
-		IFNE STEP_SEQ
-		;MOVE.W	#0,MED_STEPSEQ_POS		;RESET STEPSEQ | KONEY
-		ENDC
 		.plr_noCLRln:
 		TST.W	mmd_pstate(A2)		;play block or play song
 		BPL.W	.plr_nonewseq		;play block only...
@@ -1187,7 +1185,7 @@ DoPreFXLoop:
 		BRA.S	.doprefx_mmD0maskd
 		.doprefx_mmD12mask:
 	ENDC
-	IFNE	START_POS
+	IFNE SKIP_TO_NEXT
 		BTST	#6,$BFE001		;IF LMB		| KONEY
 		BNE.S	.doprefx_mmD0maskd
 		MOVE.W	#$0F,D0			;MOCK A F00 CMD	| KONEY
@@ -1214,9 +1212,9 @@ DoPreFXLoop:
 ; *******************************************************************
 ; args:		A6 = DB		D0 = commAND number (w)
 ;		A5 = track data	D5 = note number
-;		A4 = song	D4 = data
+;		A4 = song		D4 = data
 ;				D7 = track #
-; returns:	D0 = 0: play - D0 = 1: don't play
+; returns:	D0 = 0: play -	D0 = 1: don't play
 rtplay:		MACRO
 		MOVEQ	#0,D0
 		RTS
@@ -1313,13 +1311,15 @@ DoPreFX:
 		BRA.S	.f_ff_RTS
 	; ---------------- was not Fxx, then it's something else!!
 		.f_0e:
+	IFNE SYNTH	; NO E00 CMD IF SYNTH DISABLED	| KONEY
 	IFNE CHECK
 		CMP.B	#4,D7
 		BGE.S	.f_0e_RTS
 	ENDC
 		BSET	#0,trk_miscflags(A5)	; THIS IS FOR SYNTHSOUNDS
-		MOVE.B	D4,trk_wfcmd+1(A5)		;set waveform commAND position ptr
+		MOVE.B	D4,trk_wfcmd+1(A5)		; set waveform commAND position ptr
 		.f_0e_RTS: rtplay
+	ENDC		; NO E00 CMD IF SYNTH DISABLED	| KONEY
 	; ---------------- change volume
 		.f_0c:
 		MOVE.B	D4,D0
