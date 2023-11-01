@@ -960,8 +960,12 @@ _IntHANDler:	;MOVE.W	#$0F0,$DFF180		; show rastertime left down to $12c
 		CMP.W	numtracks-DB(A6),D7
 		BLT.S	.plr_loop2
 	; -------- THE REST... ---------------------------------------------------
+		IFNE SONG_POS_TRACKING
 		MOVE.W	mmd_pseqnum(A2),MED_SONG_POS	;SONG POSITION | KONEY
+		ENDC
+		IFNE BLOCK_LINE_TRACKING
 		MOVE.W	mmd_pline(A2),MED_BLOCK_LINE	;LINE POSITION | KONEY
+		ENDC
 		BSR.S	AdvSngPtr
 		.nonewnote:
 		BSR.W	DoFX
@@ -2774,11 +2778,19 @@ MED_TRK_1_COUNT:	DC.W $4000
 MED_TRK_2_COUNT:	DC.W $4000
 MED_TRK_3_COUNT:	DC.W $4000
 	ENDC
+	IFNE START_POS
+MED_START_POS:	DC.W 0		; staRTS at...
+	ENDC
+	IFNE SONG_POS_TRACKING
+MED_SONG_POS:	DC.W 0		; Well the position...
+	ENDC
+	IFNE BLOCK_LINE_TRACKING
+MED_BLOCK_LINE:	DC.W 0		; Line of block
+	ENDC
 	IFNE STEP_SEQ
 MED_STEPSEQ_POS:	DC.W -1		; Pos of the step sequencer 0-15 | FIX for start=1
 	ENDC
-MED_START_POS:	DC.W 0		; staRTS at...
-
+; ##### KONEY MOD ######
 ; Fields in struct InstrExt (easier to access this way rather than
 ; searching through the module).
 holdvals:		DS.B 63

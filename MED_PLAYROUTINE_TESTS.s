@@ -212,9 +212,13 @@ MainLoop:
 	;## DEBUG VALUES ##
 	MOVE.L	AUDIOCHLEV_0,D0
 	MOVE.L	AUDIOCHLEV_2,D1
+	IFNE SONG_POS_TRACKING
 	MOVE.L	MED_SONG_POS,D2
+	ENDC
+	IFNE INSTR_TRACKING
 	MOVE.L	MED_TRK_0_INST,D3
 	MOVE.L	MED_TRK_2_INST,D4
+	ENDC
 	;CLR.W	$100		; DEBUG | w 0 100 2
 	;## DEBUG VALUES ##
 
@@ -282,7 +286,9 @@ VBint:				; Blank template VERTB interrupt
 
 __FILLRNDBG:
 	MOVEM.L	D0-A6,-(SP)	; SAVE TO STACK
+	IFNE SONG_POS_TRACKING
 	MOVE.W	MED_SONG_POS,D2
+	ENDC
 	MULU.W	#bpl*2,D2
 	MOVE.L	KONEYBG,A4	; SOURCE DATA
 	ADD.L	D2,A4
@@ -367,8 +373,6 @@ __SET_SEQUENCER_LEDS:
 
 ;********** Fastmem Data **********
 LMBUTTON_STATUS:	DC.W 0
-MED_SONG_POS:	DC.W 0		; Well the position...
-MED_BLOCK_LINE:	DC.W 0		; Line of block
 AUDIOCHLEV_0:	DC.W 0
 AUDIOCHLEV_1:	DC.W 0
 AUDIOCHLEV_2:	DC.W 0
@@ -386,7 +390,7 @@ ViewBuffer:	DC.L SCREEN1
 	SECTION	"ChipData",DATA_C	;declared data that must be in chipmem
 ;*******************************************************************************
 
-MED_MODULE:	INCBIN "med/mammagamma.med"	;<<<<< MODULE NAME HERE!
+MED_MODULE:	INCBIN "med/SYNTECHNO.med"	;<<<<< MODULE NAME HERE!
 	;IFNE	SPLIT_RELOCS
 _chipzero:	DC.L 0
 	;ENDC
