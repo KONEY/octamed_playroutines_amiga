@@ -958,12 +958,12 @@ _IntHANDler:	;MOVE.W	#$0F0,$DFF180		; show rastertime left down to $12c
 		CMP.W	numtracks-DB(A6),D7
 		BLT.S	.plr_loop2
 	; -------- THE REST... ---------------------------------------------------
-		IFNE SONG_POS_TRACKING
+	IFNE SONG_POS_TRACKING
 		MOVE.W	mmd_pseqnum(A2),MED_SONG_POS	;SONG POSITION | KONEY
-		ENDC
-		IFNE BLOCK_LINE_TRACKING
+	ENDC
+	IFNE BLOCK_LINE_TRACKING
 		MOVE.W	mmd_pline(A2),MED_BLOCK_LINE	;LINE POSITION | KONEY
-		ENDC
+	ENDC
 		BSR.S	AdvSngPtr
 		.nonewnote:
 		BSR.W	DoFX
@@ -987,12 +987,12 @@ AdvSngPtr:
 		.plr_advlinenum:
 		MOVE.W	mmd_pline(A2),D1		;get current line #
 		ADDQ.W	#1,D1			;advance line number
-		IFNE STEP_SEQ
+	IFNE STEP_SEQ
 		MOVE.W	MED_STEPSEQ_POS,D0		; UPDATE STEPSEQUENCER
 		ADDQ.W	#1,D0			; INCREASE STEPSEQ | KONEY
 		ANDI.W	#$F,D0			; POSITION (0-15 = 16 LEDS)
 		MOVE.W	D0,MED_STEPSEQ_POS		; QUICKER TO DO HERE
-		ENDC
+	ENDC
 		.plr_linenumset:
 		CMP.W	numlines-DB(A6),D1 		;advance block?
 		BHI.S	.plr_chgblock		;yes.

@@ -7,31 +7,31 @@
 	INCLUDE	"med/med_feature_control.i"	; MED CFGs
 	INCLUDE	"med/MED_PlayRoutine.i"
 ;********** Constants **********
-w=320		;screen width, height, depth
-h=256
-bpls=1		;handy values:
-bpl=w/16*2	;byte-width of 1 bitplane line (40)
-bwid=bpls*bpl	;byte-width of 1 pixel line (all bpls)
+WI	EQU 320		;screen width, height, depth
+HE	EQU 256
+BPLS	EQU 1		;handy values:
+BYPL	EQU WI/16*2	;byte-width of 1 bitplane line (40)
+BWID	EQU BPLS*BYPL	;byte-width of 1 pixel line (all bpls)
 
 ;********** Demo **********	; Demo-specific non-startup code below.
 	;CLR.W	$100			; DEBUG | w 0 100 2
 Demo:	;a4=VBR, a6=Custom Registers Base addr
 	;*--- init ---*
-	move.l	#VBint,$6C(A4)
+	MOVE.L	#VBint,$6C(A4)
 	MOVE.W	#%1110000000000000,INTENA	; Master and lev6	; NO COPPER-IRQ!
 	MOVE.W	#%1000011111100000,DMACON
 	;*--- clear screens ---*
-	lea	SCREEN1,a1
+	LEA	SCREEN1,a1
 	;bsr.w	ClearScreen
-	lea	SCREEN2,a1
+	LEA	SCREEN2,a1
 	;bsr.w	ClearScreen
 	;bsr.w	WaitBlitter
 	;*--- start copper ---*
-	lea	SCREEN1,a0
-	moveq	#bpl,d0
-	lea	Copper\.BplPtrs+2,a1
-	moveq	#bpls-1,d1
-	bsr.w	PokePtrs
+	LEA	SCREEN1,a0
+	MOVEQ	#BYPL,d0
+	LEA	Copper\.BplPtrs+2,a1
+	MOVEQ	#BPLS-1,d1
+	BSR.W	PokePtrs
 
 	; #### CPU INTENSIVE TASKS BEFORE STARTING MUSIC
 	IFNE STEP_SEQ
@@ -48,17 +48,17 @@ MainLoop:
 	;move.w	#$12C,D0		;No buffering, so wait until raster
 	;bsr.w	WaitRaster	;is below the Display Window.
 	;*--- swap buffers ---*
-	movem.l	DrawBuffer,a2-a3
-	exg	a2,a3
-	movem.l	a2-a3,DrawBuffer	;draw into a2, show a3
+	MOVEM.L	DrawBuffer,A2-A3
+	EXG	A2,A3
+	MOVEM.L	A2-A3,DrawBuffer	;draw into a2, show a3
 	;*--- show one... ---*
-	move.l	a3,a0
-	move.l	#bpl*h,d0
-	lea	Copper\.BplPtrs+2,a1
-	moveq	#bpls-1,d1
-	bsr.w	PokePtrs
+	MOVE.L	A3,A0
+	MOVE.L	#BYPL*HE,D0
+	LEA	Copper\.BplPtrs+2,A1
+	MOVEQ	#BPLS-1,D1
+	BSR.W	PokePtrs
 	;*--- ...draw into the other(a2) ---*
-	move.l	a2,a1
+	MOVE.L	A2,A1
 	;bsr.w	ClearScreen
 	;bsr.w	WaitBlitter
 	MOVE.L	KONEYBG,DrawBuffer
@@ -216,7 +216,6 @@ MainLoop:
 	MOVE.L	MED_TRK_0_INST,D3
 	MOVE.L	MED_TRK_2_INST,D4
 	ENDC
-	;CLR.W	$100		; DEBUG | w 0 100 2
 	;## DEBUG VALUES ##
 
 	; # CODE FOR BUTTON PRESS ##
@@ -242,7 +241,7 @@ MainLoop:
 	BTST	#2,$DFF016	; POTINP - RMB pressed?
 	BNE.W	MainLoop		; then loop
 	;*--- exit ---*
-	; ---  quit MED code  ---
+	; --- quit MED code ---
 	MOVEM.L	D0-A6,-(SP)
 	JSR	_endmusic
 	MOVEM.L	(SP)+,D0-A6
@@ -265,35 +264,35 @@ PokePtrs:				; Generic, poke ptrs into copper list
 	addq.w	#8,a1		;skip two copper instructions
 	add.l	d0,a0		;next ptr
 	dbf	d1,.bpll
-	rts
+	RTS
 ClearScreen:			; a1=screen destination address to clear
 	BSR.W	WaitBlitter
 	CLR.W	BLTDMOD			; destination modulo
 	MOVE.L	#$01000000,BLTCON0	 	; set operation type in BLTCON0/1
 	MOVE.L	A1,BLTDPTH		; destination address
-	MOVE.W	#h*bpls*64+bpl/2,BLTSIZE	; blitter operation size
+	MOVE.W	#HE*BPLS*64+BYPL/2,BLTSIZE	; blitter operation size
 	RTS
 VBint:				; Blank template VERTB interrupt
-	btst	#5,$DFF01F	; check if it's our vertb int.
-	beq.s	.notvb
-	move.w	#$20,$DFF09C	; poll irq bit
-	move.w	#$20,$DFF09C	; KONEY REFACTOR
+	BTST	#5,$DFF01F	; check if it's our vertb int.
+	BEQ.S	.notvb
+	MOVE.W	#$20,$DFF09C	; poll irq bit
+	MOVE.W	#$20,$DFF09C	; KONEY REFACTOR
 	.notvb:	
-	rte
+	RTE
 
 __FILLRNDBG:
 	MOVEM.L	D0-A6,-(SP)	; SAVE TO STACK
 	IFNE SONG_POS_TRACKING
 	MOVE.W	MED_SONG_POS,D2
 	ENDC
-	MULU.W	#bpl*2,D2
+	MULU.W	#BYPL*2,D2
 	MOVE.L	KONEYBG,A4	; SOURCE DATA
 	ADD.L	D2,A4
 	CLR	D4
 	MOVE.B	#4-1,D4		; QUANTE LINEE
 	.OUTERLOOP:		; NUOVA RIGA
 	CLR	D6
-	MOVE.B	#bpl/2-1,D6	; RESET D6
+	MOVE.B	#BYPL/2-1,D6	; RESET D6
 	.INNERLOOP:
 	BSR.S	_RandomByte
 	MOVE.B	D5,(A4)+
@@ -301,12 +300,12 @@ __FILLRNDBG:
 	DBRA	D4,.OUTERLOOP
 	MOVEM.L	(SP)+,D0-A6	; FETCH FROM STACK
 	RTS
-_RandomWord:	bsr	_RandomByte
-		rol.w	#8,d5
-_RandomByte:	move.b	$dff007,d5 ;$dff00a $dff00b for mouse pos
-		move.b	$bfd800,d3
-		eor.b	d3,d5
-		rts
+_RandomWord:	BSR	_RandomByte
+		ROL.W	#8,D5
+_RandomByte:	MOVE.B	$DFF007,D5 ;$dff00a $dff00b for mouse pos
+		MOVE.B	$BFD800,D3
+		EOR.B	D3,D5
+		RTS
 
 	IFNE STEP_SEQ
 __POINT_SPRITES:
@@ -394,7 +393,7 @@ _chipzero:	DC.L 0
 		DC.L 0,0	 		; DUMMY
 
 BG1:		INCBIN "GFX_MEDPLAYER2.raw"
-		DS.B bpl*h	
+		DS.B BYPL*HE	
 
 	IFNE STEP_SEQ
 LED_ON:	
@@ -427,8 +426,8 @@ Copper:
 	DC.W $94,$D0	;and stop for standard screen.
 
 	DC.W $106,$0C00	;(AGA compat. if any Dual Playf. mode)
-	DC.W $108,0	;bwid-bpl	;modulos
-	DC.W $10A,0	;bwid-bpl	;RISULTATO = 80 ?
+	DC.W $108,0	;bwid-BYPL	;modulos
+	DC.W $10A,0	;bwid-BYPL	;RISULTATO = 80 ?
 	DC.W $102,0	;SCROLL REGISTER (AND PLAYFIELD PRI)
 
 	.BplPtrs:

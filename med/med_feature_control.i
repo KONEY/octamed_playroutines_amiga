@@ -2,7 +2,7 @@
 ; The less features you include, the faster and shorter the play-routine  will be.
 
 AUDDEV		EQU	0	;1 = allocate channels using audio.device
-SYNTH		EQU	0	;1 = include synth-sound handler
+SYNTH		EQU	1	;1 = include synth-sound handler
 CHECK		EQU	0	;1 = do range checkings (track, sample in mem etc.)
 RELVOL		EQU	0	;1 = include relative volume handling code
 IFFMOCT		EQU	0	;1 = play IFF multi-octave samples/ExtSamples correctly
