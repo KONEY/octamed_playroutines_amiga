@@ -27,6 +27,7 @@
 	;SECTION	"Code",CODE
 	IFNE EASY
 		XDEF	_startmusic,_endmusic
+		
 _startmusic:
 	LEA	MED_MODULE,A2
 	BSR.S	_RelocModule
@@ -281,7 +282,7 @@ _PlayNote:	;D7(w) = trk #, D1 = note #, D3(w) = instr # A3 = ADDr of instr
 	ENDC
 	; -------- ADD TRANSPOSE -------------------------------------------------
 		.inmem:
-		ADD.B	msng_playtranSP(A4),D1	;ADD play tranSPose
+		ADD.B	msng_playtransp(A4),D1	;ADD play tranSPose
 		ADD.B	inst_strans(A3),D1		;AND instr. tranSPose
 		MOVE.B	trk_outputdev(A5),D3
 		;BEQ.S	.pn_offami
@@ -289,27 +290,27 @@ _PlayNote:	;D7(w) = trk #, D1 = note #, D3(w) = instr # A3 = ADDr of instr
 	; -------- TURN OFF CHANNEL DMA, IF REQUIRED -----------------------------
 		.pn_offami:
 		CMP.B	#4,D7
-		BGE.S	.nodmaoff			;track #�>= 4: not an Amiga channel
+		BGE.S	.noDMAoff			;track #�>= 4: not an Amiga channel
 		MOVE.L	D5,A1
 	IFNE SYNTH
 		TST.L	D5
-		BEQ.S	.Stpdma
+		BEQ.S	.StpDMA
 		TST.B	trk_synthtype(A5)
-		BLE.S	.Stpdma			;prev. type = sample/hybrid
+		BLE.S	.StpDMA			;prev. type = sample/hybrid
 		CMP.W	#-1,4(A1)			;type == SYNTHETIC??
-		BEQ.S	.nostpdma
+		BEQ.S	.noStpDMA
 	ENDC
-		.Stpdma:
-		MOVE.W	D4,$dff096		;stop this channel (dmacon)
-		.nostpdma:
+		.StpDMA:
+		MOVE.W	D4,$dff096		;stop this channel (DMAcon)
+		.noStpDMA:
 	IFNE SYNTH
 		CLR.L	trk_synthptr(A5)
 	ENDC
-		.nodmaoff:
+		.noDMAoff:
 		SUBQ.B	#1,D1
 	; -------- TEST OUTPUT DEVICE AND BRANCH IF NOT STD ----------------------
 		TST.B	trk_outputdev(A5)
-		BNE.W	hANDlenonstdout
+		BNE.W	handlenonstdout
 	; -------- SET SOME AMIGA-CHANNEL PARAMETERS -----------------------------
 	IFNE CHECK
 		CMP.W	#4,D7			;track > 3???
@@ -317,24 +318,24 @@ _PlayNote:	;D7(w) = trk #, D1 = note #, D3(w) = instr # A3 = ADDr of instr
 	ENDC
 	; hANDle decay (for tracks 0 - 3 only!!)
 	IFNE HOLD
-		CLR.B	trk_fadeSPd(A5)		;no fade yet..
+		CLR.B	trk_fadespd(A5)		;no fade yet..
 		MOVE.B	trk_initdecay(A5),trk_decay(A5) ;set decay
 	ENDC
 		CLR.W	trk_vibroffs(A5)		;CLR viBRAto/tremolo offset
-		OR.W	D4,dmaonmsk-DB(A6)
+		OR.W	D4,DMAonmsk-DB(A6)
 		MOVE.L	D5,A0
 	IFNE SYNTH
 	; -------- IF SYNTH NOTE, CALL SYNTH ROUTINE -----------------------------
 		TST.W	4(A0)
-		BMI.W	hANDleSynthnote
+		BMI.W	handleSynthnote
 		CLR.B	trk_synthtype(A5)
 	ENDC
 	; -------- CHECK NOTE RANGE ----------------------------------------------
-		.tlwTST0:
+		.tlwtst0:
 		TST.B	D1
 		BPL.S	.notenot2low
 		ADD.B	#12,D1			;note was too low, octave up
-		BRA.S	.tlwTST0
+		BRA.S	.tlwtst0
 		.notenot2low:
 		CMP.B	#62,D1
 		BLE.S	.endpttest
@@ -375,14 +376,14 @@ _PlayNote:	;D7(w) = trk #, D1 = note #, D3(w) = instr # A3 = ADDr of instr
 		MOVE.W	inst_replen(A3),D3
 	IFNE IFFMOCT
 		BRA	.gid_setrept
-		.gid_ADDtable:
+		.gid_addtable:
 		DC.B	0,6,12,18,24,30
 		.gid_divtable:
 		DC.B	31,7,3,15,63,127
 		.gid_notnormal:
 		CMP.W	#7,D0
 		BLT.S	.gid_not_ext
-		SUBa.W	#48,A1
+		SUBA.W	#48,A1
 		BRA.S	.gid_cont_ext
 		.gid_not_ext:
 		MOVE.L	D7,-(SP)
@@ -400,7 +401,7 @@ _PlayNote:	;D7(w) = trk #, D1 = note #, D3(w) = instr # A3 = ADDr of instr
 		BLE.S	.nounrecit
 		MOVEQ	#6,D0
 		.nounrecit:
-		ADD.B	.gid_ADDtable-1(PC,D0.W),D7
+		ADD.B	.gid_addtable-1(PC,D0.W),D7
 		MOVE.B	.gid_divtable-1(PC,D0.W),D0
 		DIVU	D0,D1			;get length of the highest octave
 		SWAP	D1
@@ -420,7 +421,7 @@ _PlayNote:	;D7(w) = trk #, D1 = note #, D3(w) = instr # A3 = ADDr of instr
 		ADD.L	D4,D0			;skip header + stereo
 		ADD.L	D0,D1
 		MOVE.L	A1,trk_periodtbl(A5)
-		ADD.B	.ocTSTart(PC,D7.W),D5
+		ADD.B	.octstart(PC,D7.W),D5
 		ADD.B	D5,D5
 		MOVE.W	0(A1,D5.W),D5
 		MOVE.L	(SP)+,D7
@@ -431,7 +432,7 @@ _PlayNote:	;D7(w) = trk #, D1 = note #, D3(w) = instr # A3 = ADDr of instr
 		.mullencnt:	
 		DC.B	15,7,3,1,1,0,3,3,1,1,0,0,1,1,0,0,0,0
 		DC.B	7,7,3,3,1,0,31,15,7,3,1,0,63,31,15,7,3,1
-		.ocTSTart:		
+		.octstart:		
 		DC.B	12,12,12,12,24,24,0,12,12,24,24,36,0,12,12,24,36,36
 		DC.B	0,12,12,24,24,24,12,12,12,12,12,12,12,12,12,12,12,12
 	ENDC
@@ -454,7 +455,7 @@ _PlayNote:	;D7(w) = trk #, D1 = note #, D3(w) = instr # A3 = ADDr of instr
 		BHI.S	.pn_nooffsovf
 		SUB.L	D4,D0
 		.pn_nooffsovf:
-		MOVEA.L	trk_audioADDr(A5),A1	;base of this channel's regs
+		MOVEA.L	trk_audioaddr(A5),A1	;base of this channel's regs
 		MOVE.L	D0,(A1)+			;push ac_ptr
 		MOVEQ	#0,D4
 		MOVE.B	trk_previnstr(A5),D4
@@ -480,23 +481,23 @@ _PlayNote:	;D7(w) = trk #, D1 = note #, D3(w) = instr # A3 = ADDr of instr
 		MOVE.W	D5,trk_prevper(A5)
 	IFNE SYNTH
 		TST.B	trk_synthtype(A5)
-		BNE.W	hANDleSynthnote\.hSn2
+		BNE.W	handleSynthnote\.hSn2
 	ENDC
 		.pnote_RTS: RTS
 
-		hANDlenonstdout: RTS
+		handlenonstdout: RTS
 
 	IFNE SYNTH
 
 ; -------- TRIGGER SYNTH NOTE, CLEAR PARAMETERS --------------------------
-hANDleSynthnote:
+handleSynthnote:
 		MOVE.B	D1,trk_prevnote2(A5)
 		MOVE.L	A0,trk_synthptr(A5)
 		CMP.W	#-2,4(A0)			;HYBRID??
 		BNE.S	.hSn_nossn
 		ST	trk_synthtype(A5)
 		MOVEA.L	278(A0),A0		;yep, get the waveform pointer
-		BRA.W	_PlayNote\.tlwTST0		;go AND play it
+		BRA.W	_PlayNote\.tlwtst0		;go AND play it
 		.hSn_nossn:
 		MOVE.B	#1,trk_synthtype(A5)
 		LEA	_periodtable+32-DB(A6),A1
@@ -537,12 +538,12 @@ synth_start:
 		.Synth_start2:
 		MOVE.L	A3,-(SP)			;D0 = SynthPtr
 		MOVE.L	D0,A0
-		MOVEA.L	trk_audioADDr(A5),A3	;audio channel base ADDress
+		MOVEA.L	trk_audioaddr(A5),A3	;audio channel base ADDress
 	; -------- SYNTHSOUND VOLUME SEQUENCE HANDLING ---------------------------
 		SUBQ.B	#1,trk_volxcnt(A5)		;decrease execute counter..
 		BGT.W	.Synth_wftbl		;not 0...go to waveform
-		MOVE.B	trk_initvolxSPd(A5),trk_volxcnt(A5) ;reset counter
-		MOVE.B	trk_volchgSPd(A5),D0	;volume change??
+		MOVE.B	trk_initvolxspd(A5),trk_volxcnt(A5) ;reset counter
+		MOVE.B	trk_volchgspd(A5),D0	;volume change??
 		BEQ.S	.Synth_nochgvol		;no.
 		ADD.B	trk_synvol(A5),D0		;ADD previous volume
 		BPL.S	.Synth_voln2l		;not negative
@@ -599,19 +600,19 @@ synth_start:
 		MOVE.B	22(A0,D0.W),D0		;JMP
 		BRA.S	.Synth_getvolcmd
 		.Syv_f0:
-		MOVE.B	22(A0,D0.W),trk_initvolxSPd(A5) ;change volume ex. SPeed
+		MOVE.B	22(A0,D0.W),trk_initvolxspd(A5) ;change volume ex. SPeed
 		BRA.S	.Synth_inccnt
 		.Syv_f1:
 		MOVE.B	22(A0,D0.W),trk_volwait(A5)	;WAI(t)
 		ADDQ.B	#1,D0
 		BRA.S	.Synth_endvol
 		.Syv_f3:
-		MOVE.B	22(A0,D0.W),trk_volchgSPd(A5)	;set volume slide up
+		MOVE.B	22(A0,D0.W),trk_volchgspd(A5)	;set volume slide up
 		BRA.S	.Synth_inccnt
 		.Syv_f2:
 		MOVE.B	22(A0,D0.W),D1
 		NEG.B	D1
-		MOVE.B	D1,trk_volchgSPd(A5)	;set volume slide down
+		MOVE.B	D1,trk_volchgspd(A5)	;set volume slide down
 		BRA.S	.Synth_inccnt
 		.Syv_fa:
 		MOVE.B	22(A0,D0.W),trk_wfcmd+1(A5)	;JWS (jump wform sequence)
@@ -658,9 +659,9 @@ synth_start:
 	; -------- SYNTHSOUND WAVEFORM SEQUENCE HANDLING -------------------------
 		SUBQ.B	#1,trk_wfxcnt(A5)			;decr. wf SPeed counter
 		BGT.W	.Synth_arpeggio			;not yet...
-		MOVE.B	trk_initwfxSPd(A5),trk_wfxcnt(A5)	;restore SPeed counter
+		MOVE.B	trk_initwfxspd(A5),trk_wfxcnt(A5)	;restore SPeed counter
 		MOVE.W	trk_wfcmd(A5),D0			;get table pos offset
-		MOVE.W	trk_wfchgSPd(A5),D1			;CHU/CHD ??
+		MOVE.W	trk_wfchgspd(A5),D1			;CHU/CHD ??
 		BEQ.S	.Synth_TSTwfwai			;0 = no change
 		.Wytanwet:
 		ADD.W	trk_perchg(A5),D1			;ADD value to current change
@@ -717,7 +718,7 @@ synth_start:
 		BPL.S	.Synth_findare
 		BRA.S	.Synth_getwfcmd
 		.Syw_f0:
-		MOVE.B	-8(A0,D0.W),trk_initwfxSPd(A5)	;new waveform SPeed
+		MOVE.B	-8(A0,D0.W),trk_initwfxspd(A5)	;new waveform SPeed
 		BRA	.Synth_incwfc
 		.Syw_f1:
 		MOVE.B	-8(A0,D0.W),trk_wfwait(A5)		;wait waveform
@@ -727,14 +728,14 @@ synth_start:
 		MOVE.B	-8(A0,D0.W),trk_synvibdep+1(A5)	;set viBRAto depth
 		BRA.W	.Synth_incwfc
 		.Syw_f5:
-		MOVE.B	-8(A0,D0.W),trk_synthvibSPd+1(A5)	;set viBRAto SPeed
-		ADDQ.B	#1,trk_synthvibSPd+1(A5)
+		MOVE.B	-8(A0,D0.W),trk_synthvibspd+1(A5)	;set viBRAto SPeed
+		ADDQ.B	#1,trk_synthvibspd+1(A5)
 		BRA.W	.Synth_incwfc
 		.Syw_f2:
 		MOVEQ	#0,D1				;set slide down
 		MOVE.B	-8(A0,D0.W),D1
 		.Synth_setsld:
-		MOVE.W	D1,trk_wfchgSPd(A5)
+		MOVE.W	D1,trk_wfchgspd(A5)
 		BRA.W	.Synth_incwfc
 		.Syw_f3:
 		MOVE.B	-8(A0,D0.W),D1			;set slide up
@@ -782,7 +783,7 @@ synth_start:
 		MULS	D1,D0			;amplify (* depth)
 		ASR.W	#8,D0			;AND divide by 64
 		ADD.W	D0,D5			;ADD viBRAto...
-		MOVE.W	trk_synthvibSPd(A5),D0	;viBRAto SPeed
+		MOVE.W	trk_synthvibspd(A5),D0	;viBRAto SPeed
 		ADD.W	D0,trk_synviboffs(A5)	;ADD to offset
 		.Synth_RTS:
 		ADD.W	trk_perchg(A5),D5
@@ -799,7 +800,7 @@ sinetable:	DC.B	0,25,49,71,90,106,117,125,127,125,117,106,90,71,49
 		DC.B	-106,-90,-71,-49,-25,0
 		EVEN
 
-_IntHANDler:	;MOVE.W	#$0F0,$DFF180		; show rastertime left down to $12c
+_IntHandler:	;MOVE.W	#$0F0,$DFF180		; show rastertime left down to $12c
 		MOVEM.L	D2-D7/A2-A6,-(SP)
 	IFNE CIAB|VBLANK
 		MOVEA.L	A1,A6			;get data base ADDress (int_Data)
@@ -820,7 +821,7 @@ _IntHANDler:	;MOVE.W	#$0F0,$DFF180		; show rastertime left down to $12c
 		BEQ.W	.plr_exit
 		TST.W	mmd_pstate(A2)
 		BEQ.W	.plr_exit
-		CLR.W	dmaonmsk-DB(A6)
+		CLR.W	DMAonmsk-DB(A6)
 		MOVEA.L	mmd_songinfo(A2),A4
 		MOVEQ	#0,D3
 		MOVE.B	mmd_counter(A2),D3
@@ -849,34 +850,34 @@ _IntHANDler:	;MOVE.W	#$0F0,$DFF180		; show rastertime left down to $12c
 	ENDC
 		LEA	trackdataptrs-DB(A6),A1
 	; -------- TRACK LOOP (FOR EACH TRACK) -----------------------------------
-	IFNE INSTR_TRACKING			; ## KONEY MOD ##
+	IFNE INSTR_TRACKING				; ## KONEY MOD ##
 		MOVEM.L	A2,-(SP)
-		LEA	MED_TRK_0_INST,A2	; KONEY
-	ENDC				; ## KONEY MOD ##
+		LEA	MED_TRK_0_INST,A2		; KONEY
+	ENDC					; ## KONEY MOD ##
 		.plr_loop0:
-		MOVEA.L	(A1)+,A5		; get ADDress of this track's struct
+		MOVEA.L	(A1)+,A5			; get ADDress of this track's struct
 	; ---------------- get the note numbers
 		MOVEQ	#0,D3
 	IFNE PLAYMMD0
 		TST.B	D5
-		BNE.S	.plr_mmD1_1
+		BNE.S	.plr_mmd1_1
 		MOVE.B	(A3)+,D0
 		MOVE.B	(A3),D3
 		ADDQ.L	#2,A3
 		LSR.B	#4,D3
 		BCLR	#7,D0
-		BEQ.S	.plr_BSETi4
+		BEQ.S	.plr_bseti4
 		BSET	#4,D3
-		.plr_BSETi4:
+		.plr_bseti4:
 		BCLR	#6,D0
-		BEQ.S	.plr_BSETi5
+		BEQ.S	.plr_bseti5
 		BSET	#5,D3
-		.plr_BSETi5:
+		.plr_bseti5:
 		MOVE.B	D0,trk_currnote(A5)
 		BEQ.S	.plr_nngok
 		MOVE.B	D0,(A5)
 		BRA.S	.plr_nngok
-		.plr_mmD1_1:
+		.plr_mmd1_1:
 	ENDC
 		MOVE.B	(A3)+,D0			;get the number of this note
 		BPL.S	.plr_nothinote
@@ -907,7 +908,7 @@ _IntHANDler:	;MOVE.W	#$0F0,$DFF180		; show rastertime left down to $12c
 		MOVE.L	A0,trk_previnstra(A5)
 	; ---------------- get volume
 		MOVE.B	inst_svol(A0),trk_prevvol(A5)	;vol of this instr
-		MOVE.B	inst_strans(A0),trk_stranSP(A5)
+		MOVE.B	inst_strans(A0),trk_stransp(A5)
 	; ---------------- remember some values of this instrument
 		LEA	holdvals-DB(A6),A0
 		ADDA.W	D0,A0
@@ -947,10 +948,10 @@ _IntHANDler:	;MOVE.W	#$0F0,$DFF180		; show rastertime left down to $12c
 		MOVE.B	trk_previnstr(A5),D3		;instr #
 		MOVEA.L	trk_previnstra(A5),A3		;instr data ADDress
 		MOVE.B	trk_inithold(A5),trk_noteoffcnt(A5)	;initialize hold
-		BNE.S	.plr_noholD0			;not 0 -> OK
+		BNE.S	.plr_nohold0			;not 0 -> OK
 		ST	trk_noteoffcnt(A5)			;0 -> hold = 0xff (-1)
 	; ---------------- AND finally:
-		.plr_noholD0:
+		.plr_nohold0:
 		BSR	_PlayNote				;play it
 		MOVE.L	(SP)+,A1
 		.plr_loop2_end:
@@ -1000,10 +1001,10 @@ AdvSngPtr:
 		BEQ.W	.plr_nochgblock		;no, don't change block
 	; -------- CHANGE BLOCK? -------------------------------------------------
 		.plr_chgblock:
-		TST.B	nxtnoCLRln-DB(A6)
-		BNE.S	.plr_noCLRln
+		TST.B	nxtnoclrln-DB(A6)
+		BNE.S	.plr_noclrln
 		MOVEQ	#0,D1			;cLEAr line number
-		.plr_noCLRln:
+		.plr_noclrln:
 		TST.W	mmd_pstate(A2)		;play block or play song
 		BPL.W	.plr_nonewseq		;play block only...
 		CMP.B	#'2',3(A2)		;MMD2?
@@ -1208,9 +1209,9 @@ DoPreFXLoop:
 		RTS
 
 ; *******************************************************************
-; DoPreFX: Perform effects that must be hANDled before note playing
+; DoPreFX: Perform effects that must be handled before note playing
 ; *******************************************************************
-; args:		A6 = DB		D0 = commAND number (w)
+; args:		A6 = DB		D0 = command number (w)
 ;		A5 = track data	D5 = note number
 ;		A4 = song		D4 = data
 ;				D7 = track #
@@ -1268,12 +1269,12 @@ DoPreFX:
 	; ---------------- it was FFE, stop playing
 		CLR.W	mmd_pstate(A2)
 	IFNE CIAB
-		MOVEA.L	crADDr-DB(A6),A0
+		MOVEA.L	craddr-DB(A6),A0
 		BCLR	#0,(A0)
 	ENDC
 		BSR.W	SoundOff
 		ADDA.W	#8,SP			;2 SUBroutine levels
-		BRA.W	_IntHANDler\.plr_exit
+		BRA.W	_IntHandler\.plr_exit
 		.f_ffe_no8: rtplay
 		.notcmdfe:
 		CMP.B	#$fd,D4			;change period
@@ -1291,8 +1292,8 @@ DoPreFX:
 	IFNE CHECK
 		BMI.S	.f_1fRTS
 	ENDC
-		ADD.B	msng_playtranSP(A4),D0
-		ADD.B	trk_stranSP(A5),D0
+		ADD.B	msng_playtransp(A4),D0
+		ADD.B	trk_stransp(A5),D0
 		ADD.W	D0,D0
 		BMI.S	.f_1fRTS
 		MOVE.W	0(A0,D0.W),trk_prevper(A5)	;get & push the period
@@ -1460,15 +1461,15 @@ DoPreFX:
 		MOVE.L	trk_periodtbl(A5),D1
 		BEQ.S	.f_03_RTS
 		MOVEA.L	D1,A0
-		ADD.B	msng_playtranSP(A4),D0	;play tranSPose
-		ADD.B	trk_stranSP(A5),D0		;AND instrument tranSPose
+		ADD.B	msng_playtransp(A4),D0	;play tranSPose
+		ADD.B	trk_stransp(A5),D0		;AND instrument tranSPose
 		BMI.S	.f_03_RTS			;again.. too low
 		ADD.W	D0,D0
 		MOVE.W	0(A0,D0.W),trk_porttrgper(A5)	;period of this note is the target
 		.plr_setfx3SPd:
 		TST.B	D4			;qual??
 		BEQ.S	.f_03_RTS			;0 -> do nothing
-		MOVE.B	D4,trk_prevpoRTSpd(A5)	;store SPeed
+		MOVE.B	D4,trk_prevportspd(A5)	;store SPeed
 		.f_03_RTS: rtnoplay
 
 ; *******************************************************************
@@ -1715,18 +1716,18 @@ HoldAndFade:
 		BRA.S	.plr_haf_noholdexp
 	ENDC
 		.plr_nosyndec:
-		MOVE.B	trk_decay(A5),trk_fadeSPd(A5)	;set fade...
+		MOVE.B	trk_decay(A5),trk_fadespd(A5)	;set fade...
 		BNE.S	.plr_haf_noholdexp		;if > 0, don't stop sound
 		MOVEQ	#0,D0
 		BSET	D7,D0
 		MOVE.W	D0,$dff096		;shut DMA...
 		.plr_haf_noholdexp:
-		MOVE.B	trk_fadeSPd(A5),D0		;fade??
+		MOVE.B	trk_fadespd(A5),D0		;fade??
 		BEQ.S	.plr_haf_dofx		;no.
 		SUB.B	D0,trk_prevvol(A5)
 		BPL.S	.plr_nofade2low
 		CLR.B	trk_prevvol(A5)
-		CLR.B	trk_fadeSPd(A5)		;fade no more
+		CLR.B	trk_fadespd(A5)		;fade no more
 		.plr_nofade2low:
 		.plr_haf_dofx:
 		CLR.B	trk_fxtype(A5)
@@ -1776,7 +1777,7 @@ ChannelFX:
 		MOVE.W	#113,D0
 		.fx_01noovf:
 		MOVE.W	D0,trk_prevper(A5)
-		.fx_xx:		;.fx_xx is just a RTS
+		.fx_xx:			;.fx_xx is just a RTS
 		.fx_01RTS: RTS
 	; **************************************** Effect 11 ******
 		.fx_11:
@@ -1819,8 +1820,8 @@ ChannelFX:
 		.fx_doarp:
 		MOVE.B	(A5),D0
 		SUBQ.B	#1,D0			;-1 to make it 0 - 127
-		ADD.B	msng_playtranSP(A4),D0	;ADD play tranSPose
-		ADD.B	trk_stranSP(A5),D0		;ADD instrument tranSPose
+		ADD.B	msng_playtransp(A4),D0	;ADD play tranSPose
+		ADD.B	trk_stransp(A5),D0		;ADD instrument tranSPose
 		ADD.B	D0,D4
 		MOVE.L	trk_periodtbl(A5),D1
 		BEQ.S	.fx_00RTS
@@ -1850,7 +1851,7 @@ ChannelFX:
 		BEQ.S	.nonvib
 		LSR.B	#3,D4
 		AND.B	#$3e,D4
-		MOVE.B	D4,trk_vibrSPd(A5)
+		MOVE.B	D4,trk_vibrspd(A5)
 		.nonvib:
 		MOVE.B	trk_vibroffs(A5),D0
 		LSR.B	#2,D0
@@ -1862,8 +1863,8 @@ ChannelFX:
 		MULS	trk_vibrsz(A5),D0
 		MOVE.B	trk_vibshift(A5),D1
 		ASR.W	D1,D0
-		MOVE.W	D0,trk_viBRAdjust(A5)
-		MOVE.B	trk_vibrSPd(A5),D0
+		MOVE.W	D0,trk_vibrAdjust(A5)
+		MOVE.B	trk_vibrspd(A5),D0
 		ADD.B	D0,trk_vibroffs(A5)
 		.fx_04RTS: RTS
 	; **************************************** Effect 06 ******
@@ -1889,7 +1890,7 @@ ChannelFX:
 		BEQ.S	.nontre
 		LSR.B	#2,D4
 		AND.B	#$3e,D4
-		MOVE.B	D4,trk_tremSPd(A5)
+		MOVE.B	D4,trk_tremspd(A5)
 		.nontre:
 		MOVE.B	trk_tremoffs(A5),D0
 		LSR.B	#3,D0
@@ -1899,7 +1900,7 @@ ChannelFX:
 		EXT.W	D1
 		MULS	trk_tremsz(A5),D1
 		ASR.W	#7,D1
-		MOVE.B	trk_tremSPd(A5),D0
+		MOVE.B	trk_tremspd(A5),D0
 		ADD.B	D0,trk_tremoffs(A5)
 		ADD.B	trk_prevvol(A5),D1
 		BPL.S	.tre_pos
@@ -1975,7 +1976,7 @@ ChannelFX:
 		MOVE.W	trk_porttrgper(A5),D0	;D0 = target period
 		BEQ.S	.fx_03RTS
 		MOVE.W	trk_prevper(A5),D1		;D1 = curr. period
-		MOVE.B	trk_prevpoRTSpd(A5),D4	;get prev. SPeed
+		MOVE.B	trk_prevportspd(A5),D4	;get prev. SPeed
 		CMP.W	D0,D1
 		BHI.S	.Subper			;curr. period > target period
 		ADD.W	D4,D1			;ADD the period
@@ -1997,7 +1998,7 @@ ChannelFX:
 		CMP.B	#3,D3
 		BGE.S	.fx_13RTS			;if counter < 3
 		NEG.W	D4
-		MOVE.W	D4,trk_viBRAdjust(A5)	;SUBtract effect qual...
+		MOVE.W	D4,trk_vibrAdjust(A5)	;SUBtract effect qual...
 		.fx_13RTS: RTS
 	; *********************************************************
 		.fx_0c:
@@ -2058,10 +2059,10 @@ UpdatePerVol:
 		MOVE.L	(SP)+,A1
 	ENDC
 		.plr_upv_nosynth:
-		ADD.W	trk_viBRAdjust(A5),D5
+		ADD.W	trk_vibrAdjust(A5),D5
 		SUB.W	trk_arpadjust(A5),D5
-		CLR.L	trk_viBRAdjust(A5)		;CLR both adjusts
-		MOVEA.L	trk_audioADDr(A5),A0
+		CLR.L	trk_vibrAdjust(A5)		;CLR both adjusts
+		MOVEA.L	trk_audioaddr(A5),A0
 		MOVE.W	D5,ac_per(A0)		;push period
 		MOVEQ	#0,D0
 		MOVE.B	trk_tempvol(A5),D0
@@ -2169,15 +2170,15 @@ _Wait1line:
 		bcc.S	.rpnewv
 		MOVE.L	trk_sampleptr(A5),D1
 		BEQ.S	.rpnewv
-		MOVEA.L	trk_audioADDr(A5),A0
+		MOVEA.L	trk_audioaddr(A5),A0
 		MOVE.L	D1,ac_ptr(A0)
 		MOVE.W	trk_samplelen(A5),ac_len(A0)
 		.rpnewv:	RTS
 
 ; -------- AUDIO DMA ROUTINE ---------------------------------------------
 _StartDMA:	;This small routine turns on audio DMA
-		MOVE.W	dmaonmsk-DB(A6),D0		;dmaonmsk contains the mask of
-		BEQ.S	.Sdma_nodmaon		;the channels that must be turned on
+		MOVE.W	DMAonmsk-DB(A6),D0		;DMAonmsk contains the mask of
+		BEQ.S	.SDMA_noDMAon		;the channels that must be turned on
 	IFNE INSTR_TRACKING
 		LEA	MED_TRK_0_COUNT,A4		; #KONEY# RESET AUDIO LEVELS
 		BTST	#$0,D0
@@ -2197,7 +2198,7 @@ _StartDMA:	;This small routine turns on audio DMA
 		MOVE.W	#$0,6(A4)
 		.noCh3:
 	ENDC
-		BSET	#15,D0			;DMAF_SETCLR: set these bits in dmacon
+		BSET	#15,D0			;DMAF_SETCLR: set these bits in DMAcon
 		MOVEQ	#80,D1
 	; The following line makes the playroutine one scanline slower. If your
 	; song works well without the following instruction, you can LEAve it out.
@@ -2213,7 +2214,7 @@ _StartDMA:	;This small routine turns on audio DMA
 		BSR.S	_Wait1line\.pushnewvals
 		BSR.S	_Wait1line\.pushnewvals
 		BRA.S	_Wait1line\.pushnewvals
-		.Sdma_nodmaon:
+		.SDMA_noDMAon:
 		RTS
 
 _SetTempo:
@@ -2234,13 +2235,13 @@ _SetTempo:
 		MOVE.L	timerdiv-DB(A6),D1
 		DIVU	D0,D1
 		.pushtempo:
-		MOVEA.L	crADDr+4-DB(A6),A0
+		MOVEA.L	craddr+4-DB(A6),A0
 		MOVE.B	D1,(A0)			;AND set the CIA timer
 		LSR.W	#8,D1
-		MOVEA.L	crADDr+8-DB(A6),A0
+		MOVEA.L	craddr+8-DB(A6),A0
 		MOVE.B	D1,(A0)
 	ENDC
-		.ST_x:	RTS		; vv-- These values are the SoundTracker tempos (approx.)
+		.ST_x:	RTS			; vv-- These values are the SoundTracker tempos (approx.)
 		.Sttempo:	
 		DC.W	$0f00
 	IFNE CIAB
@@ -2376,9 +2377,9 @@ _InitModule:
 _InitPlayer:
 		BSR.W	_AudioInit
 		TST.L	D0
-		BNE.S	.IP_erROR
+		BNE.S	.IP_error
 		RTS
-		.IP_erROR:
+		.IP_error:
 		BSR.S	_RemPlayer
 		MOVEQ	#-1,D0
 		RTS
@@ -2402,7 +2403,7 @@ _StopPlayer:
 		MOVE.B	_timeropen-DB(A1),D0
 		BEQ.S	.SP_end			;res. alloc fail.
 	IFNE CIAB
-		MOVEA.L	crADDr-DB(A1),A0
+		MOVEA.L	craddr-DB(A1),A0
 		BCLR	#0,(A0)			;stop timer
 	ENDC
 		MOVE.L	_module-DB(A1),D0
@@ -2417,7 +2418,7 @@ _StopPlayer:
 _ContModule:
 		TST.B	_timeropen
 		BEQ.S	_StopPlayer\.SP_end
-		MOVEA.L	crADDr,A1
+		MOVEA.L	craddr,A1
 		BCLR	#0,(A1)
 		MOVE.L	A0,-(SP)
 		BSR.W	SoundOff
@@ -2441,7 +2442,7 @@ _PlayModule:
 		MOVE.L	A0,D1
 		BEQ	.PM_end			;module failure
 	IFNE CIAB
-		MOVEA.L	crADDr-DB(A6),A1
+		MOVEA.L	craddr-DB(A6),A1
 		BCLR	#0,(A1)			;stop timer...
 	ENDC
 		CLR.L	_module-DB(A6)
@@ -2471,14 +2472,14 @@ _PlayModule:
 		BCLR	#1,$bfe001
 		.PM_filset:
 		TST.B	D0
-		BEQ.S	.PM_noCLR
+		BEQ.S	.PM_noclr
 		CLR.L	mmd_pline(A0)
 		CLR.L	rptline-DB(A6)
 		CLR.W	blkdelay-DB(A6)
 	; ---------- Set 'pblock' AND 'pseq' to correct values...
-		.PM_noCLR:
+		.PM_noclr:
 		CMP.B	#'2',3(A0)
-		BNE.S	.PM_oldpBSET
+		BNE.S	.PM_oldpbset
 		MOVE.W	mmd_psecnum(A0),D1
 		MOVE.L	A2,-(SP)			;need extra register
 		MOVEA.L	msng_sections(A1),A2
@@ -2494,7 +2495,7 @@ _PlayModule:
 		MOVE.W	42(A2,D1.W),D1		;AND the correct block..
 		MOVE.L	(SP)+,A2
 		BRA.S	.PM_setblk
-		.PM_oldpBSET:
+		.PM_oldpbset:
 		MOVE.W	mmd_pseqnum(A0),D1
 		ADD.W	#msng_playseq,D1
 		MOVE.B	0(A1,D1.W),D1		;get first playseq entry
@@ -2507,7 +2508,7 @@ _PlayModule:
 		SEQ	bpmcounter-DB(A6)
 	IFNE CIAB
 		MOVE.W	msng_deftempo(A1),D0	;get default tempo
-		MOVEA.L	crADDr-DB(A6),A1
+		MOVEA.L	craddr-DB(A6),A1
 		BSR.W	_SetTempo			;set default tempo
 		BSET	#0,(A1)			;start timer => PLAY!!
 	ENDC
@@ -2593,8 +2594,8 @@ _AudioInit:
 		BRA.W	.open_ciares
 	;+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ attach interrupt
 		.got_timer:
-		LEA	crADDr+8-DB(A4),A6
-		MOVE.L	.cia_ADDr(PC,D3.W),D0
+		LEA	craddr+8-DB(A4),A6
+		MOVE.L	.cia_addr(PC,D3.W),D0
 		MOVE.L	D0,(A6)
 		SUB.W	#$100,D0
 		MOVE.L	D0,-(A6)
@@ -2623,8 +2624,8 @@ _AudioInit:
 		.initerr:
 		MOVE.L	D2,D0
 		BRA.S	.initret
-		.cia_ADDr:
-		DC.L $BFE501,$BFE701,$BFD500,$BFD700
+		.cia_addr:
+		DC.L	$BFE501,$BFE701,$BFD500,$BFD700
 
 _AudioRem:
 		MOVEM.L	A5-A6,-(SP)
@@ -2678,17 +2679,17 @@ sigbitnum:	DC.B -1
 	ENDC
 		EVEN
 _module:		DC.L 0
-dmaonmsk:		DC.W 0 ;\_May not be
+DMAonmsk:		DC.W 0 ;\_May not be
 	IFNE CIAB
 _ciaresource:	DC.L 0
-crADDr:		DC.L 0
+craddr:		DC.L 0
 		DC.L 0		;tloADDr
 		DC.L 0		;thiADDr
 	ENDC
 
 timerinterrupt:	DC.W 0,0,0,0,0
 		DC.L timerintname,DB
-		DC.L _IntHANDler
+		DC.L _IntHandler
 	IFNE AUDDEV
 allocport:	DC.L 0,0		;succ, pred
 		DC.B 4,0		;NT_MSGPORT
@@ -2714,8 +2715,8 @@ audiodevname:	DC.B 'audio.device',0
 	ENDC
 	IFNE CIAB
 cianame:		DC.B 'ciax.resource',0
-_timeropen:	DC.B 0
 	ENDC
+_timeropen:	DC.B 0
 timerintname:	DC.B 'OMEDTimerInterrupt',0
 		EVEN
 ; TRACK-data structures (see definitions at the end of this file)
@@ -2751,7 +2752,7 @@ TRKCOUNT		SET TRKCOUNT+T415SZ
 ; MODIFICATION FOR ASM-PRO
 ;	DC.L t463d+0
 nextblock:	DC.B 0 ;\ DON'T SEPARATE
-nxtnoCLRln:	DC.B 0 ;/
+nxtnoclrln:	DC.B 0 ;/
 numtracks:	DC.W 0 ;\ DON'T SEPARATE
 numlines:		DC.W 0 ;/
 numpages:		DC.W 0
@@ -3005,7 +3006,7 @@ OFFS	SET 0
 	DEFBYTE	trk_noteoffcnt	;note-off counter (hold)
 	DEFBYTE	trk_inithold	;default hold for this instrument
 	DEFBYTE	trk_initdecay	;default decay for....
-	DEFBYTE	trk_stranSP	;instrument tranSPose
+	DEFBYTE	trk_stransp	;instrument tranSPose
 	DEFBYTE	trk_finetune	;finetune
 	DEFWORD	trk_soffset	;new sample offset | don't sep this AND 2 below!
 	DEFBYTE	trk_miscflags	;bit: 7 = cmd 3 exists, 0 = cmd E exists
@@ -3016,12 +3017,12 @@ OFFS	SET 0
 	DEFWORD	trk_trackvol
 	; the following data only on tracks 0 - 3
 	DEFWORD	trk_prevper	;previous period
-	DEFLONG	trk_audioADDr	;hardware audio channel base ADDress
+	DEFLONG	trk_audioaddr	;hardware audio channel base ADDress
 	DEFLONG	trk_sampleptr	;pointer to sample
 	DEFWORD	trk_samplelen	;length (>> 1)
 	DEFWORD	trk_porttrgper	;portamento (cmd 3) target period
 	DEFBYTE	trk_vibshift	;viBRAto shift for ASR instruction
-	DEFBYTE	trk_vibrSPd	;viBRAto SPeed/size (cmd 4 qualifier)
+	DEFBYTE	trk_vibrspd	;viBRAto SPeed/size (cmd 4 qualifier)
 	DEFWORD	trk_vibrsz	;viBRAto size
 	DEFLONG	trk_synthptr	;pointer to synthetic/hybrid instrument
 	DEFWORD	trk_arpgoffs	;SYNTH: current arpeggio offset
@@ -3032,32 +3033,32 @@ OFFS	SET 0
 	DEFWORD	trk_wfcmd		;SYNTH: waveform commAND pointer
 	DEFBYTE	trk_volwait	;SYNTH: counter for WAI (volume list)
 	DEFBYTE	trk_wfwait	;SYNTH: counter for WAI (waveform list)
-	DEFWORD	trk_synthvibSPd	;SYNTH: viBRAto SPeed
-	DEFWORD	trk_wfchgSPd	;SYNTH: period change
+	DEFWORD	trk_synthvibspd	;SYNTH: viBRAto SPeed
+	DEFWORD	trk_wfchgspd	;SYNTH: period change
 	DEFWORD	trk_perchg	;SYNTH: curr. period change from trk_prevper
 	DEFLONG	trk_envptr	;SYNTH: envelope waveform pointer
 	DEFWORD	trk_synvibdep	;SYNTH: viBRAto depth
 	DEFLONG	trk_synvibwf	;SYNTH: viBRAto waveform
 	DEFWORD	trk_synviboffs	;SYNTH: viBRAto pointer
-	DEFBYTE	trk_initvolxSPd	;SYNTH: volume execute SPeed
-	DEFBYTE	trk_initwfxSPd	;SYNTH: waveform execute SPeed
-	DEFBYTE	trk_volchgSPd	;SYNTH: volume change
+	DEFBYTE	trk_initvolxspd	;SYNTH: volume execute SPeed
+	DEFBYTE	trk_initwfxspd	;SYNTH: waveform execute SPeed
+	DEFBYTE	trk_volchgspd	;SYNTH: volume change
 	DEFBYTE	trk_prevnote2	;SYNTH: previous note
 	DEFBYTE	trk_synvol	;SYNTH: current volume
 	DEFBYTE	trk_synthtype	;>0 = synth, -1 = hybrid, 0 = no synth
 	DEFLONG	trk_periodtbl	;pointer to period table
-	DEFWORD	trk_prevpoRTSpd	;portamento (cmd 3) SPeed
+	DEFWORD	trk_prevportspd	;portamento (cmd 3) SPeed
 	DEFBYTE	trk_decay		;decay
-	DEFBYTE	trk_fadeSPd	;decay SPeed
+	DEFBYTE	trk_fadespd	;decay SPeed
 	DEFLONG	trk_envrestart	;SYNTH: envelope waveform restart point
 	DEFBYTE	trk_envcount	;SYNTH: envelope counter
-	DEFBYTE	trk_SPlit		;0 = this channel not SPlitted (OctaMED V2)
+	DEFBYTE	trk_split		;0 = this channel not SPlitted (OctaMED V2)
 	DEFWORD	trk_newper	;new period (for synth use)
 	DEFBYTE	trk_vibroffs	;viBRAto table offset \ DON'T SEPARATE
 	DEFBYTE	trk_tremoffs	;tremolo table offset /
 	DEFWORD	trk_tremsz	;tremolo size
-	DEFBYTE	trk_tremSPd	;tremolo SPeed
+	DEFBYTE	trk_tremspd	;tremolo SPeed
 	DEFBYTE	trk_tempvol	;temporary volume (for tremolo)
-	DEFWORD	trk_viBRAdjuST	;viBRAto +/- change from base period \ DON'T SEPARATE
-	DEFWORD	trk_arpadjuST	;arpeggio +/- change from base period/
+	DEFWORD	trk_vibrAdjust	;viBRAto +/- change from base period \ DON'T SEPARATE
+	DEFWORD	trk_arpadjust	;arpeggio +/- change from base period/
 	;END

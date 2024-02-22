@@ -3,9 +3,11 @@
 	INCDIR	"NAS:AMIGA/CODE/octamed_playroutines_amiga/"
 	SECTION	"Code",CODE
 	INCLUDE	"custom-registers.i"
-	INCLUDE	"PhotonsMiniWrapper1.04.S"
 	INCLUDE	"med/med_feature_control.i"	; MED CFGs
+	INCLUDE	"PhotonsMiniWrapper1.04.S"
+	IFNE MED_PLAY_ENABLE
 	INCLUDE	"med/MED_PlayRoutine.i"
+	ENDC
 ;********** Constants **********
 WI	EQU 320		;screen width, height, depth
 HE	EQU 256
@@ -14,12 +16,13 @@ BYPL	EQU WI/16*2	;byte-width of 1 bitplane line (40)
 BWID	EQU BPLS*BYPL	;byte-width of 1 pixel line (all bpls)
 
 ;********** Demo **********	; Demo-specific non-startup code below.
-	;CLR.W	$100			; DEBUG | w 0 100 2
 Demo:	;a4=VBR, a6=Custom Registers Base addr
 	;*--- init ---*
 	MOVE.L	#VBint,$6C(A4)
 	MOVE.W	#%1110000000000000,INTENA	; Master and lev6	; NO COPPER-IRQ!
 	MOVE.W	#%1000011111100000,DMACON
+	;MOVE.W	#$C020,INTENA
+	;MOVE.W	#$87C0,DMACON
 	;*--- clear screens ---*
 	LEA	SCREEN1,a1
 	;bsr.w	ClearScreen
@@ -38,15 +41,18 @@ Demo:	;a4=VBR, a6=Custom Registers Base addr
 	BSR.W	__POINT_SPRITES		; #### Point sprites
 	ENDC
 	; #### CPU INTENSIVE TASKS BEFORE STARTING MUSIC
-
+	IFNE MED_PLAY_ENABLE
 	; in photon's wrapper comment:;move.w d2,$9a(a6) ;INTENA
 	;MOVE.W	#2,MED_START_POS	 ; skip to pos# after first block
 	JSR	_startmusic
+	ENDC
+
+	MOVE.L	#Copper\.Palette,COP2LC
 	MOVE.L	#Copper,COP1LC
 ;********************  main loop  ********************
 MainLoop:
-	;move.w	#$12C,D0		;No buffering, so wait until raster
-	;bsr.w	WaitRaster	;is below the Display Window.
+	move.w	#$12C,D0		;No buffering, so wait until raster
+	bsr.w	WaitRaster	;is below the Display Window.
 	;*--- swap buffers ---*
 	MOVEM.L	DrawBuffer,A2-A3
 	EXG	A2,A3
@@ -219,9 +225,23 @@ MainLoop:
 	;## DEBUG VALUES ##
 
 	; # CODE FOR BUTTON PRESS ##
-	;BTST	#6,$BFE001
-	;BNE.S	.skip
-	;MOVE.W	#$0FF0,$DFF180	; show rastertime left down to $12c
+	BTST	#6,$BFE001
+	BNE.S	.skip
+	MOVE.W	#$0FF0,$DFF180		; show rastertime left down to $12c
+	IFNE MED_PLAY_ENABLE
+	;###########################
+	LEA	DB,A6			;don't expect A1 to contain DB ADDress
+	MOVEA.L	_module-DB(A6),A2
+	MOVEA.L	mmd_songinfo(A2),A4		; 03D5 009B 0000 4001 0301 006E 0000 4000
+	;CLR.L	D3
+	MOVE.W	#$10,D3			;D3 = instr.num << 2
+	;SUBQ.B	#1,D3
+	;ASL.W	#3,D3
+	MOVE.L	0(A4,D3.W),A0		;get ADDress of instrument
+	MOVE.B	inst_strans(A0),D0		;AND instr. tranSPose
+	;ADD.B	#$4,D0
+	MOVE.B	D0,inst_strans(A0)		;AND instr. tranSPose
+	ENDC
 	.skip:
 
 	;BTST	#6,$BFE001
@@ -236,15 +256,17 @@ MainLoop:
 	;MOVE.W	#0,LMBUTTON_STATUS
 	;.DontResetStatus:
 
-	BSR.S	WaitRasterCopper	; is below the Display Window.
+	;BSR.S	WaitRasterCopper	; is below the Display Window.
 
 	BTST	#2,$DFF016	; POTINP - RMB pressed?
 	BNE.W	MainLoop		; then loop
 	;*--- exit ---*
+	IFNE MED_PLAY_ENABLE
 	; --- quit MED code ---
 	MOVEM.L	D0-A6,-(SP)
 	JSR	_endmusic
 	MOVEM.L	(SP)+,D0-A6
+	ENDC
 	RTS
 ;********** Demo Routines **********
 
@@ -268,16 +290,20 @@ PokePtrs:				; Generic, poke ptrs into copper list
 ClearScreen:			; a1=screen destination address to clear
 	BSR.W	WaitBlitter
 	CLR.W	BLTDMOD			; destination modulo
-	MOVE.L	#$01000000,BLTCON0	 	; set operation type in BLTCON0/1
+	MOVE.L	#$01000000,BLTCON0		; set operation type in BLTCON0/1
 	MOVE.L	A1,BLTDPTH		; destination address
 	MOVE.W	#HE*BPLS*64+BYPL/2,BLTSIZE	; blitter operation size
 	RTS
 VBint:				; Blank template VERTB interrupt
-	BTST	#5,$DFF01F	; check if it's our vertb int.
+	BTST	#5,INTREQR+1	; check if it's our vertb int.
 	BEQ.S	.notvb
-	MOVE.W	#$20,$DFF09C	; poll irq bit
-	MOVE.W	#$20,$DFF09C	; KONEY REFACTOR
-	.notvb:	
+	MOVE.W	D0,-(SP)		; SAVE USED REGISTERS
+	MOVE.W	INTREQR,D0
+	OR.W	#$20,D0		; BSET 5,D0 but quicker :)
+	MOVE.W	D0,INTREQ		; poll irq bit
+	MOVE.W	D0,INTREQ		; KONEY REFACTOR
+	MOVE.W	(SP)+,D0		; RESTORE
+	.notvb:
 	RTE
 
 __FILLRNDBG:
@@ -382,9 +408,9 @@ KONEYBG:		DC.L BG1		; INIT BG
 DrawBuffer:	DC.L SCREEN2	; pointers to buffers to be swapped
 ViewBuffer:	DC.L SCREEN1
 
-;*******************************************************************************
+*******************************************************************************
 	SECTION	"ChipData",DATA_C	;declared data that must be in chipmem
-;*******************************************************************************
+*******************************************************************************
 
 MED_MODULE:	INCBIN "med/mammagamma.med"	;<<<<< MODULE NAME HERE!
 	;IFNE	SPLIT_RELOCS
@@ -445,7 +471,7 @@ Copper:
 	DC.W $F6,0		;full 6 ptrs, in case you increase bpls
 	DC.W $100,BPLS*$1000+$200	;enable bitplanes
 
-	.Palette:			;Some kind of palette (3 bpls=8 colors)
+	.Palette:		;Some kind of palette (3 bpls=8 colors)
 	DC.W $0180,$0111,$0182,$0FFF,$0184,$0111,$0186,$0122
 	DC.W $0188,$0F00,$018A,$0F00,$018C,$0F00,$018E,$0F00
 	DC.W $0190,$0F00,$0192,$0F00,$0194,$0F00,$0196,$0F00
@@ -542,16 +568,15 @@ Copper:
 	DC.W $FFDF,$FFFE		; allow VPOS>$ff
 
 	DC.W $3501,$FF00		; ## RASTER END ## #$12C?
-	DC.W $009A,$0010		; CLEAR RASTER BUSY FLAG
+	;DC.W $009A,$0010		; CLEAR RASTER BUSY FLAG
 
 	DC.W $FFFF,$FFFE		; magic value to end copperlist
 
-;*******************************************************************************
+*******************************************************************************
 	SECTION "ChipBuffers",BSS_C	;BSS doesn't count toward exe size
-;*******************************************************************************
+*******************************************************************************
 
 SCREEN1:		DS.W 1		; Define storage for buffer 1
 SCREEN2:		DS.W 1		; two buffers
 GLITCHBUFFER:	DS.B 0		; some free space for glitch
-
 	END

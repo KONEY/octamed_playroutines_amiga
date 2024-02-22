@@ -1,11 +1,8 @@
 -----------------------------------------------------------------------------
-
-        MED/OctaMED MMD0/MMD1/MMD2 file formats
-        written by Teijo Kinnunen (18.05.1995)
-        Revision 4
-
+	MED/OctaMED MMD0/MMD1/MMD2 file formats
+	written by Teijo Kinnunen (18.05.1995)
+	Revision 4
 $VER: MMD_documentation 4 (18.05.1995)
-
 -----------------------------------------------------------------------------
 
 Background

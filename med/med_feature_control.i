@@ -10,9 +10,10 @@ HOLD		EQU	0	;1 = handle hold/decay
 PLAYMMD0 		EQU	0	;1 = play old MMD0 modules
 
 ; #### KONEY ####
+MED_PLAY_ENABLE	EQU	1	; Global disable of all MED code.
 STOP_AT_END	EQU	0	; Dont loop at end of sequence | TO VERIFY
 START_POS		EQU	0	; After SEQ 0 jump to value in MED_START_POS
-SKIP_TO_NEXT	EQU	1	; LMB to skip to next block. Just an example
+SKIP_TO_NEXT	EQU	0	; LMB to skip to next block. Just an example
 STEP_SEQ		EQU	1	; Enable step sequencer in MED_STEPSEQ_POS
 SONG_POS_TRACKING	EQU	1	; Keep track of song position in MED_SONG_POS
 BLOCK_LINE_TRACKING	EQU	1	; Keep track of block line in MED_BLOCK_LINE
