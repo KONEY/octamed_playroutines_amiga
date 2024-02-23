@@ -2353,8 +2353,8 @@ _InitModule:
 		CLR.W	(A2)+			;..AND finetunes/flags/ext_psets
 		DBF	D0,.IM_loop3
 		MOVEA.L	(SP),A0
-	; -------- For (very old) MMDs, with no InstrExt, set flags/SSFLG_LOOP,
-	; -------- also copy inst_midipreset to ext_midipsets.
+		; -------- For (very old) MMDs, with no InstrExt, set flags/SSFLG_LOOP,
+		; -------- also copy inst_midipreset to ext_midipsets.
 		MOVEA.L	mmd_songinfo(A0),A3
 		LEA	flags,A2
 		MOVEQ	#62,D0
@@ -2476,7 +2476,7 @@ _PlayModule:
 		CLR.L	mmd_pline(A0)
 		CLR.L	rptline-DB(A6)
 		CLR.W	blkdelay-DB(A6)
-	; ---------- Set 'pblock' AND 'pseq' to correct values...
+		; ---------- Set 'pblock' AND 'pseq' to correct values...
 		.PM_noclr:
 		CMP.B	#'2',3(A0)
 		BNE.S	.PM_oldpbset
@@ -2522,7 +2522,7 @@ _AudioInit:
 		LEA	DB,A4
 		MOVEQ	#0,D2
 		MOVEA.L	4.W,A6
-	;+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ alloc signal bit
+		;+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ alloc signal bit
 	IFNE AUDDEV
 		MOVEQ	#1,D2
 		MOVEQ	#-1,D0
@@ -2530,7 +2530,7 @@ _AudioInit:
 		TST.B	D0
 		BMI.W	initerr
 		MOVE.B	D0,sigbitnum-DB(A4)
-	;+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ prepare IORequest
+		;+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ prepare IORequest
 		LEA	allocport-DB(A4),A1
 		MOVE.B	D0,15(A1)			;set mp_SigBit
 		MOVE.L	A1,-(SP)
@@ -2543,7 +2543,7 @@ _AudioInit:
 		ADDQ.L	#4,(A0)
 		CLR.L	4(A0)
 		MOVE.L	A0,8(A0)			;NEWLIST ends...
-	;+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ open audio.device
+		;+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ open audio.device
 		MOVEQ	#2,D2
 		LEA	allocreq-DB(A4),A1
 		LEA	audiodevname-DB(A4),A0
@@ -2554,7 +2554,7 @@ _AudioInit:
 		TST.B	D0
 		BNE.W	initerr
 		ST	audiodevopen-DB(A4)
-	;+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ open cia resource
+		;+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ open cia resource
 		MOVEQ	#3,D2
 	ENDC
 	IFNE CIAB
@@ -2592,7 +2592,7 @@ _AudioInit:
 		ADDQ.B	#1,3(A1)
 		MOVEQ	#8,D3			;CIAB base ADDr index = 8
 		BRA.W	.open_ciares
-	;+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ attach interrupt
+		;+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ attach interrupt
 		.got_timer:
 		LEA	craddr+8-DB(A4),A6
 		MOVE.L	.cia_addr(PC,D3.W),D0
@@ -2643,7 +2643,8 @@ _AudioRem:
 	ENDC
 	IFNE VBLANK
 		MOVEA.L	4.W,A6
-		LEA	timerinterrupt(PC),A1
+		;LEA	timerinterrupt(PC),A1
+		LEA	timerinterrupt-DB(A5),A1
 		MOVEQ	#5,D0
 		JSR	-$ae(A6)			;RemIntServer
 	ENDC
@@ -2669,7 +2670,36 @@ _AudioRem:
 		MOVEM.L	(SP)+,A5-A6
 		RTS
 
-DATA:
+; ##### KONEY MOD ######
+	IFNE INSTR_TRACKING
+MED_TRK_0_INST:	DC.B 0		; sample# note...
+MED_TRK_0_NOTE:	DC.B 0
+MED_TRK_1_INST:	DC.B 0
+MED_TRK_1_NOTE:	DC.B 0
+MED_TRK_2_INST:	DC.B 0
+MED_TRK_2_NOTE:	DC.B 0
+MED_TRK_3_INST:	DC.B 0
+MED_TRK_3_NOTE:	DC.B 0
+MED_TRK_0_COUNT:	DC.W $4000
+MED_TRK_1_COUNT:	DC.W $4000
+MED_TRK_2_COUNT:	DC.W $4000
+MED_TRK_3_COUNT:	DC.W $4000
+	ENDC
+	IFNE START_POS
+MED_START_POS:	DC.W 0		; staRTS at...
+	ENDC
+	IFNE SONG_POS_TRACKING
+MED_SONG_POS:	DC.W 0		; Well the position...
+	ENDC
+	IFNE BLOCK_LINE_TRACKING
+MED_BLOCK_LINE:	DC.W 0		; Line of block
+	ENDC
+	IFNE STEP_SEQ
+MED_STEPSEQ_POS:	DC.W -1		; Pos of the step sequencer 0-15 | FIX for start=1
+	ENDC
+; ##### KONEY MOD ######
+
+	DATA
 DB:		;Data base pointer
 miscresbase:	DC.L 0
 timerdiv:		DC.L 470000
@@ -2763,35 +2793,6 @@ blkdelay:		DC.W 0		;block delay (PT PatternDelay)
 bpmcounter:	DC.W 0
 bpmdiv:		DC.L 3546895/2
 fxplineblk:	DC.L 0		;for reading effects
-
-; ##### KONEY MOD ######
-	IFNE INSTR_TRACKING
-MED_TRK_0_INST:	DC.B 0		; sample# note...
-MED_TRK_0_NOTE:	DC.B 0
-MED_TRK_1_INST:	DC.B 0
-MED_TRK_1_NOTE:	DC.B 0
-MED_TRK_2_INST:	DC.B 0
-MED_TRK_2_NOTE:	DC.B 0
-MED_TRK_3_INST:	DC.B 0
-MED_TRK_3_NOTE:	DC.B 0
-MED_TRK_0_COUNT:	DC.W $4000
-MED_TRK_1_COUNT:	DC.W $4000
-MED_TRK_2_COUNT:	DC.W $4000
-MED_TRK_3_COUNT:	DC.W $4000
-	ENDC
-	IFNE START_POS
-MED_START_POS:	DC.W 0		; staRTS at...
-	ENDC
-	IFNE SONG_POS_TRACKING
-MED_SONG_POS:	DC.W 0		; Well the position...
-	ENDC
-	IFNE BLOCK_LINE_TRACKING
-MED_BLOCK_LINE:	DC.W 0		; Line of block
-	ENDC
-	IFNE STEP_SEQ
-MED_STEPSEQ_POS:	DC.W -1		; Pos of the step sequencer 0-15 | FIX for start=1
-	ENDC
-; ##### KONEY MOD ######
 ; Fields in struct InstrExt (easier to access this way rather than
 ; searching through the module).
 holdvals:		DS.B 63

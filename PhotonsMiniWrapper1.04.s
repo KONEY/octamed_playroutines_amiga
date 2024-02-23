@@ -9,10 +9,6 @@ Start:
 ;*--- save view+coppers ---*
 
 	.yes68k:
-	;CMP.W	#$27,$14(A6)	; $27 = 39 = KS 3.0 | EXEC VERS
-	;BGE.S	.belowKS30	; DONT MESS WITH OS IRQs - NO FLICKER ON A3000
-	;MOVE.L	$78.W,A4		; or $6c(a0) with a0=vbrbase BY KONEY
-	;.belowKS30:
 	lea	.GfxLib(PC),a1	;either way return to here and open
 	jsr	-408(a6)		;graphics library
 	tst.l	d0		;if not OK,
@@ -89,9 +85,9 @@ WaitRaster:			;Wait for scanline d0. Trashes d1.
 AllOff:	
 	move.w	#$7fff,d2		;clear all bits
 	move.w	d2,DMACON		;in DMACON,
-	IFEQ MED_PLAY_ENABLE
+	;IFEQ MED_PLAY_ENABLE
 	move.w	d2,INTENA		;INTENA,	; DONT RESET FOR MED PLAYER
-	ENDC
+	;ENDC
 IntReqD2:
 	move.w	d2,INTREQ		;and INTREQ
 	move.w	d2,INTREQ		;twice for A4000 compatibility

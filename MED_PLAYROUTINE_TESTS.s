@@ -5,9 +5,6 @@
 	INCLUDE	"custom-registers.i"
 	INCLUDE	"med/med_feature_control.i"	; MED CFGs
 	INCLUDE	"PhotonsMiniWrapper1.04.S"
-	IFNE MED_PLAY_ENABLE
-	INCLUDE	"med/MED_PlayRoutine.i"
-	ENDC
 ;********** Constants **********
 WI	EQU 320		;screen width, height, depth
 HE	EQU 256
@@ -18,11 +15,13 @@ BWID	EQU BPLS*BYPL	;byte-width of 1 pixel line (all bpls)
 ;********** Demo **********	; Demo-specific non-startup code below.
 Demo:	;a4=VBR, a6=Custom Registers Base addr
 	;*--- init ---*
+	;MOVE.L	A4,TEMP_ADDRESS
+	;MOVE.L	TEMP_ADDRESS,A4
 	MOVE.L	#VBint,$6C(A4)
-	MOVE.W	#%1110000000000000,INTENA	; Master and lev6	; NO COPPER-IRQ!
-	MOVE.W	#%1000011111100000,DMACON
 	;MOVE.W	#$C020,INTENA
-	;MOVE.W	#$87C0,DMACON
+	MOVE.W	#$87C0,DMACON
+	MOVE.W	#%1000000000001100,INTENA	; Master and lev6	; NO COPPER-IRQ!
+	;MOVE.W	#%1000011111100000,DMACON
 	;*--- clear screens ---*
 	LEA	SCREEN1,a1
 	;bsr.w	ClearScreen
@@ -43,7 +42,6 @@ Demo:	;a4=VBR, a6=Custom Registers Base addr
 	; #### CPU INTENSIVE TASKS BEFORE STARTING MUSIC
 	IFNE MED_PLAY_ENABLE
 	; in photon's wrapper comment:;move.w d2,$9a(a6) ;INTENA
-	;MOVE.W	#2,MED_START_POS	 ; skip to pos# after first block
 	JSR	_startmusic
 	ENDC
 
@@ -388,6 +386,7 @@ __SET_SEQUENCER_LEDS:
 	ENDC
 
 ;********** Fastmem Data **********
+TEMP_ADDRESS:	DC.L 0
 LMBUTTON_STATUS:	DC.W 0
 AUDIOCHLEV_0:	DC.W 0
 AUDIOCHLEV_1:	DC.W 0
@@ -401,6 +400,10 @@ SEQ_POS_OFF:	DC.B $59,$00,$00,$00,$79,$00,$00,$00,$99,$00,$00,$00,$B9,$00,$00,$0
 KONEYBG:		DC.L BG1		; INIT BG
 DrawBuffer:	DC.L SCREEN2	; pointers to buffers to be swapped
 ViewBuffer:	DC.L SCREEN1
+
+	IFNE MED_PLAY_ENABLE
+	INCLUDE	"med/MED_PlayRoutine.i"
+	ENDC
 
 *******************************************************************************
 	SECTION	"ChipData",DATA_C	;declared data that must be in chipmem
