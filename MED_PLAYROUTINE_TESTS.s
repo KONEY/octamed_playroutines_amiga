@@ -5,6 +5,9 @@
 	INCLUDE	"custom-registers.i"
 	INCLUDE	"med/med_feature_control.i"	; MED CFGs
 	INCLUDE	"PhotonsMiniWrapper1.04.S"
+	IFNE MED_PLAY_ENABLE
+	INCLUDE	"med/MED_PlayRoutine.i"
+	ENDC
 ;********** Constants **********
 WI	EQU 320		;screen width, height, depth
 HE	EQU 256
@@ -400,10 +403,6 @@ SEQ_POS_OFF:	DC.B $59,$00,$00,$00,$79,$00,$00,$00,$99,$00,$00,$00,$B9,$00,$00,$0
 KONEYBG:		DC.L BG1		; INIT BG
 DrawBuffer:	DC.L SCREEN2	; pointers to buffers to be swapped
 ViewBuffer:	DC.L SCREEN1
-
-	IFNE MED_PLAY_ENABLE
-	INCLUDE	"med/MED_PlayRoutine.i"
-	ENDC
 
 *******************************************************************************
 	SECTION	"ChipData",DATA_C	;declared data that must be in chipmem

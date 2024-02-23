@@ -2558,6 +2558,7 @@ _AudioInit:
 		MOVEQ	#3,D2
 	ENDC
 	IFNE CIAB
+		CLR.W	$100		; DEBUG | w 0 100 2
 		CMP.B	#50,$212(A6)		;ExecBase->VBlankFrequency
 		BEQ.S	.init_pal
 		MOVE.L	#474326,timerdiv-DB(A4)	;Assume that CIA freq is 715 909 Hz
@@ -2643,8 +2644,7 @@ _AudioRem:
 	ENDC
 	IFNE VBLANK
 		MOVEA.L	4.W,A6
-		;LEA	timerinterrupt(PC),A1
-		LEA	timerinterrupt-DB(A5),A1
+		LEA	timerinterrupt(PC),A1
 		MOVEQ	#5,D0
 		JSR	-$ae(A6)			;RemIntServer
 	ENDC
@@ -2670,36 +2670,7 @@ _AudioRem:
 		MOVEM.L	(SP)+,A5-A6
 		RTS
 
-; ##### KONEY MOD ######
-	IFNE INSTR_TRACKING
-MED_TRK_0_INST:	DC.B 0		; sample# note...
-MED_TRK_0_NOTE:	DC.B 0
-MED_TRK_1_INST:	DC.B 0
-MED_TRK_1_NOTE:	DC.B 0
-MED_TRK_2_INST:	DC.B 0
-MED_TRK_2_NOTE:	DC.B 0
-MED_TRK_3_INST:	DC.B 0
-MED_TRK_3_NOTE:	DC.B 0
-MED_TRK_0_COUNT:	DC.W $4000
-MED_TRK_1_COUNT:	DC.W $4000
-MED_TRK_2_COUNT:	DC.W $4000
-MED_TRK_3_COUNT:	DC.W $4000
-	ENDC
-	IFNE START_POS
-MED_START_POS:	DC.W 0		; staRTS at...
-	ENDC
-	IFNE SONG_POS_TRACKING
-MED_SONG_POS:	DC.W 0		; Well the position...
-	ENDC
-	IFNE BLOCK_LINE_TRACKING
-MED_BLOCK_LINE:	DC.W 0		; Line of block
-	ENDC
-	IFNE STEP_SEQ
-MED_STEPSEQ_POS:	DC.W -1		; Pos of the step sequencer 0-15 | FIX for start=1
-	ENDC
-; ##### KONEY MOD ######
-
-	DATA
+	;DATA:
 DB:		;Data base pointer
 miscresbase:	DC.L 0
 timerdiv:		DC.L 470000
@@ -2793,6 +2764,35 @@ blkdelay:		DC.W 0		;block delay (PT PatternDelay)
 bpmcounter:	DC.W 0
 bpmdiv:		DC.L 3546895/2
 fxplineblk:	DC.L 0		;for reading effects
+
+; ##### KONEY MOD ######
+	IFNE INSTR_TRACKING
+MED_TRK_0_INST:	DC.B 0		; sample# note...
+MED_TRK_0_NOTE:	DC.B 0
+MED_TRK_1_INST:	DC.B 0
+MED_TRK_1_NOTE:	DC.B 0
+MED_TRK_2_INST:	DC.B 0
+MED_TRK_2_NOTE:	DC.B 0
+MED_TRK_3_INST:	DC.B 0
+MED_TRK_3_NOTE:	DC.B 0
+MED_TRK_0_COUNT:	DC.W $4000
+MED_TRK_1_COUNT:	DC.W $4000
+MED_TRK_2_COUNT:	DC.W $4000
+MED_TRK_3_COUNT:	DC.W $4000
+	ENDC
+	IFNE START_POS
+MED_START_POS:	DC.W 0		; staRTS at...
+	ENDC
+	IFNE SONG_POS_TRACKING
+MED_SONG_POS:	DC.W 0		; Well the position...
+	ENDC
+	IFNE BLOCK_LINE_TRACKING
+MED_BLOCK_LINE:	DC.W 0		; Line of block
+	ENDC
+	IFNE STEP_SEQ
+MED_STEPSEQ_POS:	DC.W -1		; Pos of the step sequencer 0-15 | FIX for start=1
+	ENDC
+; ##### KONEY MOD ######
 ; Fields in struct InstrExt (easier to access this way rather than
 ; searching through the module).
 holdvals:		DS.B 63
