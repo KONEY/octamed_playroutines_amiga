@@ -251,7 +251,6 @@ MainLoop:
 	;BEQ.S	.DontResetStatus
 	;MOVE.W	#0,LMBUTTON_STATUS
 	;.DontResetStatus:
-
 	;BSR.S	WaitRasterCopper	; is below the Display Window.
 
 	BTST	#2,$DFF016	; POTINP - RMB pressed?
@@ -292,14 +291,13 @@ ClearScreen:			; a1=screen destination address to clear
 	RTS
 VBint:				; Blank template VERTB interrupt
 	BTST	#5,INTREQR+1	; check if it's our vertb int.
-	BEQ.S	.notvb
+	BEQ.S	.notVB		; KONEY REFACTOR
 	MOVE.W	D0,-(SP)		; SAVE USED REGISTERS
-	MOVE.W	INTREQR,D0
-	OR.W	#$20,D0		; BSET 5,D0 but quicker :)
+	MOVE.W	#$20,D0		; BSET 5,D0 but quicker :)
 	MOVE.W	D0,INTREQ		; poll irq bit
 	MOVE.W	D0,INTREQ		; KONEY REFACTOR
 	MOVE.W	(SP)+,D0		; RESTORE
-	.notvb:
+	.notVB:
 	RTE
 
 __FILLRNDBG:
