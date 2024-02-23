@@ -24,12 +24,19 @@ SPLIT_RELOCS	EQU	0	; Samples are expected at label MED_SAMPLES so all the rest c
 ;****** Timing control ******
 VBLANK		EQU	0	;1 = use VBlank interrupt (when absolutely necessary)
 CIAB		EQU	1	;1 = use CIA timers (default)
-;
 ; Please use CIAB whenever possible to avoid problems with variable
 ; VBlank speeds and to allow the use of command F01 - FF0 (set tempo)
 ; If both are set to 0, the timing is left for you (never set both to 1!!),
 ; then you just call _IntHandler for each timing pulse.
-
+; ======
+; If you need vertical blanking timing, you can set VBLANK to 1 and CIAB to 0.
+; In normal use this is not recommended (because of the 16 % difference in
+; playing speed with NTSC and PAL Amigas), but if tight synchronization to
+; vertical blanking (e.g. in most demos/games) is required, VBLANK can be
+; used.
+; For VBlank timing, the song has to be composed with primary tempo of about
+; 33. The primary tempo cannot be changed with command F. Only the secondary
+; tempo control can be used (command 9).
 ;============================================================================
 
 ;If you are making a demo/game with only a single tune you'd like to

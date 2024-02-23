@@ -227,20 +227,16 @@ MainLoop:
 	; # CODE FOR BUTTON PRESS ##
 	BTST	#6,$BFE001
 	BNE.S	.skip
-	MOVE.W	#$0FF0,$DFF180		; show rastertime left down to $12c
+	MOVE.W	#$000F,$DFF180		; show rastertime left down to $12c
 	IFNE MED_PLAY_ENABLE
-	;###########################
-	LEA	DB,A6			;don't expect A1 to contain DB ADDress
-	MOVEA.L	_module-DB(A6),A2
-	MOVEA.L	mmd_songinfo(A2),A4		; 03D5 009B 0000 4001 0301 006E 0000 4000
-	;CLR.L	D3
-	MOVE.W	#$10,D3			;D3 = instr.num << 2
-	;SUBQ.B	#1,D3
-	;ASL.W	#3,D3
-	MOVE.L	0(A4,D3.W),A0		;get ADDress of instrument
-	MOVE.B	inst_strans(A0),D0		;AND instr. tranSPose
-	;ADD.B	#$4,D0
-	MOVE.B	D0,inst_strans(A0)		;AND instr. tranSPose
+	;#### TESTS FOR TRANSPOSE ####
+	;LEA	DB,A6			;don't expect A1 to contain DB ADDress
+	;MOVEA.L	_module-DB(A6),A2
+	;MOVEA.L	mmd_songinfo(A2),A4		; 03D5 009B 0000 4001 0301 006E 0000 4000
+	;MOVE.W	#$10,D3			;D3 = instr.num << 2
+	;MOVE.L	0(A4,D3.W),A0		;get ADDress of instrument
+	;MOVE.B	inst_strans(A0),D0		;AND instr. tranSPose
+	;MOVE.B	D0,inst_strans(A0)		;AND instr. tranSPose
 	ENDC
 	.skip:
 

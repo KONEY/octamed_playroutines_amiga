@@ -2682,10 +2682,10 @@ _module:		DC.L 0
 DMAonmsk:		DC.W 0 ;\_May not be
 	IFNE CIAB
 _ciaresource:	DC.L 0
+	ENDC
 craddr:		DC.L 0
 		DC.L 0		;tloADDr
 		DC.L 0		;thiADDr
-	ENDC
 
 timerinterrupt:	DC.W 0,0,0,0,0
 		DC.L timerintname,DB
