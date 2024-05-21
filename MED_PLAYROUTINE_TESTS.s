@@ -18,8 +18,6 @@ BWID	EQU BPLS*BYPL	;byte-width of 1 pixel line (all bpls)
 ;********** Demo **********	; Demo-specific non-startup code below.
 Demo:	;a4=VBR, a6=Custom Registers Base addr
 	;*--- init ---*
-	;MOVE.L	A4,TEMP_ADDRESS
-	;MOVE.L	TEMP_ADDRESS,A4
 	MOVE.L	#VBint,$6C(A4)
 	;MOVE.W	#$C020,INTENA
 	MOVE.W	#$87C0,DMACON
@@ -291,14 +289,12 @@ ClearScreen:			; a1=screen destination address to clear
 	MOVE.W	#HE*BPLS*64+BYPL/2,BLTSIZE	; blitter operation size
 	RTS
 VBint:				; Blank template VERTB interrupt
-	BTST	#5,INTREQR+1	; check if it's our vertb int.
-	BEQ.S	.notVB		; KONEY REFACTOR
-	MOVE.W	D0,-(SP)		; SAVE USED REGISTERS
-	MOVE.W	#$20,D0		; BSET 5,D0 but quicker :)
-	MOVE.W	D0,INTREQ		; poll irq bit
-	MOVE.W	D0,INTREQ		; KONEY REFACTOR
-	MOVE.W	(SP)+,D0		; RESTORE
-	.notVB:
+	BTST	#5,INTREQR+1	; CHECK IF IT'S OUR VERTB INT.
+	BEQ.S	.notVB
+	;*--- DO STUFF HERE ---*
+	MOVE.W	#$20,INTREQ	; POLL IRQ BIT
+	MOVE.W	#$20,INTREQ
+	.notVB:	
 	RTE
 
 __FILLRNDBG:
@@ -389,7 +385,6 @@ __SET_SEQUENCER_LEDS:
 	ENDC
 
 ;********** Fastmem Data **********
-TEMP_ADDRESS:	DC.L 0
 LMBUTTON_STATUS:	DC.W 0
 AUDIOCHLEV_0:	DC.W 0
 AUDIOCHLEV_1:	DC.W 0

@@ -2558,7 +2558,6 @@ _AudioInit:
 		MOVEQ	#3,D2
 	ENDC
 	IFNE CIAB
-		CLR.W	$100		; DEBUG | w 0 100 2
 		CMP.B	#50,$212(A6)		;ExecBase->VBlankFrequency
 		BEQ.S	.init_pal
 		MOVE.L	#474326,timerdiv-DB(A4)	;Assume that CIA freq is 715 909 Hz
