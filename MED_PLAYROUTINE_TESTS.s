@@ -18,7 +18,7 @@ BWID	EQU BPLS*BYPL	;byte-width of 1 pixel line (all bpls)
 ;********** Demo **********	; Demo-specific non-startup code below.
 Demo:	;a4=VBR, a6=Custom Registers Base addr
 	;*--- init ---*
-	MOVE.L	#VBint,$6C(A4)
+	;MOVE.L	#VBint,$6C(A4)
 	;MOVE.W	#$C020,INTENA
 	MOVE.W	#$87C0,DMACON
 	MOVE.W	#%1000000000001100,INTENA	; Master and lev6	; NO COPPER-IRQ!
@@ -403,7 +403,7 @@ ViewBuffer:	DC.L SCREEN1
 	SECTION	"ChipData",DATA_C	;declared data that must be in chipmem
 *******************************************************************************
 
-MED_MODULE:	INCBIN "med/mammagamma.med"	;<<<<< MODULE NAME HERE!
+MED_MODULE:	INCBIN "med/mammagamma_SPD.med"	;<<<<< MODULE NAME HERE!
 	;IFNE	SPLIT_RELOCS
 _chipzero:	DC.L 0
 	;ENDC
