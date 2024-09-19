@@ -22,8 +22,8 @@ SPLIT_RELOCS	EQU	0	; Samples are expected at label MED_SAMPLES so all the rest c
 ; #### KONEY ####
 
 ;****** Timing control ******
-VBLANK		EQU	0	;1 = use VBlank interrupt (when absolutely necessary)
-CIAB		EQU	1	;1 = use CIA timers (default)
+VBLANK		EQU	1	;1 = use VBlank interrupt (when absolutely necessary)
+CIAB		EQU	0	;1 = use CIA timers (default)
 ; Please use CIAB whenever possible to avoid problems with variable
 ; VBlank speeds and to allow the use of command F01 - FF0 (set tempo)
 ; If both are set to 0, the timing is left for you (never set both to 1!!),
